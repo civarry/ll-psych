@@ -1,0 +1,34 @@
+<!-- templates/admin/purchases.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Purchase History</h2>
+  <table class="table table-bordered table-hover table-striped">
+    <thead class="table-dark">
+      <tr>
+        <th>Purchase ID</th>
+        <th>User Email</th>
+        <th>Exam Title</th>
+        <th>Amount</th>
+        <th>Purchased At</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for purchase in purchases %}
+        <tr>
+          <td>{{ purchase.id }}</td>
+          <td>{{ purchase.email }}</td>
+          <td>{{ purchase.exam.title if purchase.exam else 'N/A' }}</td>
+          <td>₱{{ "%.2f"|format(purchase.exam.price) if purchase.exam else '0.00' }}</td>
+          <td>{{ purchase.purchased_at.strftime('%Y-%m-%d %I:%M %p') }}</td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="5" class="text-center">No purchases found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

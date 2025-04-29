@@ -1,0 +1,75 @@
+<!-- templates/exam.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ exam.title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">{{ exam.title }}</h4>
+    </div>
+    <div class="card-body">
+        {% if exam.exam_type == 'content' %}
+            <!-- Regular content exam -->
+            <div class="exam-content">
+                {{ exam.content|safe }}
+            </div>
+        {% elif exam.exam_type == 'likert' %}
+            <!-- Likert scale survey -->
+            <div class="mb-4">
+                {{ exam.content|safe }}
+            </div>
+            
+            {% set likert_scale = exam.get_likert_scale() %}
+            
+            {% if purchase.answers %}
+                <!-- Display submitted answers -->
+                <div class="alert alert-success">
+                    <h5>Your submitted responses:</h5>
+                    <ul class="list-group mt-3">
+                        {% for question in exam.get_questions() %}
+                            {% set question_id = question.id|string %}
+                            <li class="list-group-item">
+                                <div class="fw-bold">{{ question.text }}</div>
+                                <div>Your answer: 
+                                    {% if question_id in answers %}
+                                        {% set value = answers[question_id]|int %}
+                                        {{ likert_scale[value] if value in likert_scale else value }}
+                                    {% else %}
+                                        Not answered
+                                    {% endif %}
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% else %}
+                <!-- Survey form -->
+                <form method="post">
+                    <div class="likert-questions">
+                        {% for question in exam.get_questions() %}
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ question.text }}</h5>
+                                    <div class="d-flex flex-wrap gap-3 mt-3">
+                                        {% for value, label in likert_scale.items()|sort %}
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="{{ question.id }}" id="q{{ question.id }}_{{ value }}" value="{{ value }}" {% if loop.first %}required{% endif %}>
+                                                <label class="form-check-label" for="q{{ question.id }}_{{ value }}">{{ label }}</label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary">Submit Responses</button>
+                    </div>
+                </form>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

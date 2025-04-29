@@ -1,0 +1,629 @@
+import os
+import secrets
+import smtplib
+import json
+from email.message import EmailMessage
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, session
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+from functools import wraps
+import requests
+import base64
+from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+import tempfile
+
+# Load environment variables
+load_dotenv()
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'sqlite:///exams.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+@app.template_filter('fromjson')
+def fromjson_filter(json_string):
+    """Filter to convert a JSON string back to a Python object"""
+    if not json_string:
+        return {}
+    try:
+        return json.loads(json_string)
+    except:
+        return {}
+
+# PayMongo API configuration
+PAYMONGO_PUBLIC_KEY = os.getenv('PAYMONGO_PUBLIC_KEY')
+PAYMONGO_SECRET_KEY = os.getenv('PAYMONGO_SECRET_KEY') 
+PAYMONGO_API_URL = "https://api.paymongo.com/v1"
+
+# Email configuration
+EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
+EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
+# Flag to check if email is properly configured
+EMAIL_ENABLED = all([EMAIL_ADDRESS, EMAIL_PASSWORD])
+
+# Admin credentials - in production store these securely or in database
+ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
+ADMIN_PASSWORD_HASH = os.getenv('ADMIN_PASSWORD_HASH', 
+                              generate_password_hash('admin123'))  # Default password for dev only
+
+db = SQLAlchemy(app)
+
+# Database Models
+class Exam(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    exam_type = db.Column(db.String(20))  # 'content' or 'likert'
+    description = db.Column(db.Text, nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    questions = db.Column(db.Text, nullable=True)  # Stored as JSON
+    exam_type = db.Column(db.String(20), default='content')  # 'content' or 'likert'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    likert_scale = db.Column(db.Text, nullable=True)
+    scoring_rules = db.Column(db.Text, nullable=True)
+    
+    def get_questions(self):
+        """Parse the JSON questions"""
+        if not self.questions:
+            return []
+        try:
+            return json.loads(self.questions)
+        except:
+            return []
+    
+    def get_likert_scale(self):
+        """Returns the Likert scale as a dict, or defaults if not set"""
+        default_scale = {
+            "1": "Strongly Disagree",
+            "2": "Disagree",
+            "3": "Neutral",
+            "4": "Agree",
+            "5": "Strongly Agree"
+        }
+        try:
+            return json.loads(self.likert_scale) if self.likert_scale else default_scale
+        except Exception:
+            return default_scale
+
+class Purchase(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    exam_id = db.Column(db.Integer, db.ForeignKey('exam.id'), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    access_token = db.Column(db.String(100), unique=True, nullable=False)
+    payment_id = db.Column(db.String(100), nullable=True)
+    payment_status = db.Column(db.String(20), default='pending')
+    answers = db.Column(db.Text, nullable=True)  # Store user answers as JSON
+    purchased_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    exam = db.relationship('Exam', backref=db.backref('purchases', lazy=True))
+
+# Authentication decorator for admin routes
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('admin_logged_in'):
+            flash('Please log in to access the admin area.', 'warning')
+            return redirect(url_for('admin_login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Routes
+@app.route('/')
+def index():
+    """Landing page with introduction and CTA"""
+    return render_template('index.html')
+
+@app.route('/shop')
+def shop():
+    """Shop page listing all available exams"""
+    exams = Exam.query.all()
+    return render_template('shop.html', exams=exams)
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+# Admin routes
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    """Admin login page"""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username == ADMIN_USERNAME and check_password_hash(ADMIN_PASSWORD_HASH, password):
+            session['admin_logged_in'] = True
+            next_page = request.args.get('next')
+            flash('You have been logged in successfully!', 'success')
+            return redirect(next_page or url_for('admin_dashboard'))
+        else:
+            flash('Invalid username or password. Please try again.', 'danger')
+    
+    return render_template('admin/login.html')
+
+@app.route('/admin/logout')
+def admin_logout():
+    """Admin logout"""
+    session.pop('admin_logged_in', None)
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('index'))
+
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    """Admin dashboard"""
+    exams_count = Exam.query.count()
+    purchases_count = Purchase.query.count()
+    completed_purchases = Purchase.query.filter_by(payment_status='paid').count()
+    recent_purchases = Purchase.query.order_by(Purchase.purchased_at.desc()).limit(5).all()
+    
+    return render_template('admin/dashboard.html', 
+                          exams_count=exams_count,
+                          purchases_count=purchases_count,
+                          completed_purchases=completed_purchases,
+                          recent_purchases=recent_purchases)
+
+@app.route('/admin/exams')
+@admin_required
+def admin_exams():
+    """Admin exams list"""
+    exams = Exam.query.order_by(Exam.created_at.desc()).all()
+    return render_template('admin/exams.html', exams=exams)
+
+@app.route('/admin/exams/create', methods=['GET', 'POST'])
+@admin_required
+def admin_create_exam():
+    """Create a new exam"""
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        price = float(request.form.get('price'))
+        exam_type = request.form.get('exam_type')
+        content = request.form.get('content', '')
+
+        # 🔹 Get scoring_rules (optional JSON input)
+        scoring_rules_raw = request.form.get('scoring_rules')
+        try:
+            scoring_rules = json.loads(scoring_rules_raw) if scoring_rules_raw else None
+        except json.JSONDecodeError:
+            flash('Invalid JSON in scoring rules.', 'danger')
+            return redirect(url_for('admin_create_exam'))
+
+        # 🔹 Build questions list for likert type
+        questions = []
+        if exam_type == 'likert':
+            question_texts = request.form.getlist('question_text')
+            for i, question_text in enumerate(question_texts):
+                if question_text:
+                    questions.append({
+                        "id": i + 1,
+                        "text": question_text
+                    })
+
+        # 🔹 Create the new Exam object with scoring_rules
+        likert_scale = None
+        if exam_type == 'likert':
+            likert_values = request.form.getlist("likert_value")
+            likert_labels = request.form.getlist("likert_label")
+            likert_scale = json.dumps({v: l for v, l in zip(likert_values, likert_labels)})
+
+        new_exam = Exam(
+            title=title,
+            description=description,
+            price=price,
+            content=content,
+            exam_type=exam_type,
+            questions=json.dumps(questions) if questions else None,
+            scoring_rules=json.dumps(scoring_rules) if scoring_rules else None,
+            likert_scale=likert_scale
+        )
+
+        db.session.add(new_exam)
+        db.session.commit()
+
+        flash('Exam created successfully!', 'success')
+        return redirect(url_for('admin_exams'))
+
+    return render_template('admin/create_exam.html')
+
+@app.route('/admin/exams/edit/<int:exam_id>', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_exam(exam_id):
+    """Edit an existing exam"""
+    exam = Exam.query.get_or_404(exam_id)
+
+    if request.method == 'POST':
+        exam.title = request.form.get('title')
+        exam.description = request.form.get('description')
+        exam.price = float(request.form.get('price'))
+        exam.exam_type = request.form.get('exam_type')
+        exam.content = request.form.get('content', '')
+
+        if exam.exam_type == 'likert':
+            # Process Likert scale questions
+            question_texts = request.form.getlist('question_text')
+            questions = [{"id": i + 1, "text": text} for i, text in enumerate(question_texts) if text]
+            exam.questions = json.dumps(questions) if questions else None
+
+            # Process Likert scale values and labels
+            likert_values = request.form.getlist("likert_value")
+            likert_labels = request.form.getlist("likert_label")
+            exam.likert_scale = json.dumps({v: l for v, l in zip(likert_values, likert_labels)})
+
+            # Process scoring rules as JSON
+            scoring_rules_raw = request.form.get("scoring_rules", "").strip()
+            if scoring_rules_raw:
+                try:
+                    parsed = json.loads(scoring_rules_raw)  # Validate JSON
+                    exam.scoring_rules = json.dumps(parsed)  # Store as JSON string
+                except json.JSONDecodeError:
+                    flash("Invalid JSON format in scoring rules.", "danger")
+                    return redirect(request.url)
+            else:
+                exam.scoring_rules = None
+        else:
+            # Clear Likert-specific fields if not a Likert exam
+            exam.questions = None
+            exam.likert_scale = None
+            exam.scoring_rules = None
+
+        db.session.commit()
+        flash('Exam updated successfully!', 'success')
+        return redirect(url_for('admin_exams'))
+
+    # For GET request, populate form with existing data
+    if exam.exam_type == 'likert':
+        # Convert JSON fields to Python objects for template use
+        try:
+            exam.scoring_rules = json.loads(exam.scoring_rules) if exam.scoring_rules else {}
+        except json.JSONDecodeError:
+            exam.scoring_rules = {}
+
+        try:
+            exam.questions = json.loads(exam.questions) if exam.questions else []
+        except json.JSONDecodeError:
+            exam.questions = []
+
+        try:
+            exam.likert_scale = json.loads(exam.likert_scale) if exam.likert_scale else {}
+        except json.JSONDecodeError:
+            exam.likert_scale = {}
+
+    return render_template('admin/edit_exam.html', exam=exam)
+
+@app.route('/admin/exams/delete/<int:exam_id>', methods=['POST'])
+@admin_required
+def admin_delete_exam(exam_id):
+    """Delete an exam"""
+    exam = Exam.query.get_or_404(exam_id)
+    
+    # Check if there are any purchases for this exam
+    purchase_count = Purchase.query.filter_by(exam_id=exam_id).count()
+    if purchase_count > 0:
+        flash(f'Cannot delete exam: {purchase_count} customers have purchased it.', 'danger')
+        return redirect(url_for('admin_exams'))
+    
+    # If no purchases, delete the exam
+    db.session.delete(exam)
+    db.session.commit()
+    flash('Exam deleted successfully!', 'success')
+    return redirect(url_for('admin_exams'))
+
+@app.route('/admin/purchases')
+@admin_required
+def admin_purchases():
+    """Admin purchases list"""
+    purchases = Purchase.query.order_by(Purchase.purchased_at.desc()).all()
+    return render_template('admin/purchases.html', purchases=purchases)
+
+@app.route('/buy/<int:exam_id>', methods=['GET', 'POST'])
+def buy(exam_id):
+    """Purchase form for a specific exam"""
+    exam = Exam.query.get_or_404(exam_id)
+    
+    if request.method == 'POST':
+        email = request.form.get('email')
+            
+        # Generate a unique token for this purchase
+        access_token = secrets.token_urlsafe(32)
+        
+        # Save purchase info in the database
+        purchase = Purchase(
+            exam_id=exam_id,
+            email=email,
+            access_token=access_token,
+            payment_id="dev-test-payment",
+            payment_status='pending'
+        )
+        db.session.add(purchase)
+        db.session.commit()
+        
+        # Redirect to the simple payment form for development/testing
+        return render_template('direct_payment.html', 
+                              amount=exam.price,
+                              purchase_id=purchase.id,
+                              exam_title=exam.title,
+                              exam=exam)
+    if exam.questions:
+        questions = json.loads(exam.questions)
+        question_count = len(questions)
+    else:
+        question_count = 0
+
+    test_type = exam.exam_type.title()
+    
+    return render_template('buy.html', 
+                           exam=exam,
+                           question_count=question_count,
+                           test_type=test_type)
+
+@app.route('/process_payment/<int:purchase_id>', methods=['POST'])
+def process_payment(purchase_id):
+    """Process payment manually (for development/testing only)"""
+    purchase = Purchase.query.get_or_404(purchase_id)
+    
+    # In a real implementation, this would validate the card data with PayMongo
+    # For development purposes, we'll just mark the payment as successful
+    purchase.payment_status = 'paid'
+    db.session.commit()
+    
+    # Send email with exam access link
+    email_sent = send_exam_email(purchase)
+    if not email_sent and EMAIL_ENABLED:
+        flash('Payment successful but there was an issue sending the confirmation email. You can still access your exam.', 'warning')
+    
+    return redirect(url_for('payment_success', purchase_id=purchase_id))
+
+@app.route('/payment/success/<int:purchase_id>')
+def payment_success(purchase_id):
+    """Handle successful payment"""
+    purchase = Purchase.query.get_or_404(purchase_id)
+    
+    # Only update status if it's not already paid
+    if purchase.payment_status != 'paid':
+        purchase.payment_status = 'paid'
+        db.session.commit()
+        
+        # Send email with exam access link if not already sent
+        email_sent = send_exam_email(purchase)
+        if not email_sent and EMAIL_ENABLED:
+            flash('There was an issue sending the confirmation email. You can still access your exam.', 'warning')
+    
+    return render_template('payment_success.html', 
+                          access_token=purchase.access_token,
+                          exam_title=purchase.exam.title)
+
+@app.route('/exam/<token>', methods=['GET', 'POST'])
+def exam(token):
+    """Access purchased exam content with token"""
+    # Find the purchase record by token
+    purchase = Purchase.query.filter_by(access_token=token).first_or_404()
+    
+    # Check if payment is verified
+    if purchase.payment_status != 'paid':
+        flash('Payment is required to access this exam.', 'danger')
+        abort(403)  # Not authorized
+
+    # Get the associated exam
+    exam = purchase.exam
+    if not exam:
+        flash('The requested exam could not be found.', 'danger')
+        abort(404)
+    
+    # Initialize answers if needed
+    answers = {}
+    if purchase.answers:
+        try:
+            answers = json.loads(purchase.answers)
+        except json.JSONDecodeError:
+            app.logger.error(f"Failed to parse answers JSON for purchase {purchase.id}")
+    
+    # Handle exam submission for Likert scale
+    if request.method == 'POST' and exam.exam_type == 'likert':
+        new_answers = {}
+        for question in exam.get_questions():
+            question_id = str(question['id'])
+            if question_id in request.form:
+                new_answers[question_id] = request.form.get(question_id)
+        
+        if new_answers:
+            total_score = sum(int(v) for v in new_answers.values())
+            purchase.answers = json.dumps(new_answers)
+
+            flash(f'Your responses have been submitted successfully! Total Score: {total_score}', 'success')
+
+            if exam.scoring_rules:
+                try:
+                    scoring = json.loads(exam.scoring_rules)
+                    for zone in scoring.get("zones", []):
+                        if zone["min"] <= total_score <= zone["max"]:
+                            flash(zone["label"], 'info')
+                            break
+                except Exception as e:
+                    app.logger.error(f"Scoring rules parsing failed: {e}")
+
+            db.session.commit()
+
+            # Determine zone label
+            zone_label = "Uncategorized"
+            if exam.scoring_rules:
+                try:
+                    scoring = json.loads(exam.scoring_rules)
+                    for zone in scoring.get("zones", []):
+                        if zone["min"] <= total_score <= zone["max"]:
+                            zone_label = zone["label"]
+                            break
+                except Exception as e:
+                    app.logger.error(f"Scoring rules parsing failed: {e}")
+
+            # Generate PDF and send result email
+            pdf_path = generate_result_pdf(purchase, total_score, zone_label)
+            send_result_email(purchase.email, exam.title, pdf_path)
+
+            return redirect(url_for('exam', token=token))
+
+    
+    # Log exam access for debugging
+    app.logger.info(f"Accessing exam {exam.id} ({exam.title}) with token {token[:5]}...")
+    app.logger.info(f"Exam type: {exam.exam_type}, Questions: {exam.questions is not None}")
+    
+    return render_template('exam.html', exam=exam, purchase=purchase, answers=answers)
+
+# Helper Functions
+def send_exam_email(purchase):
+    """Send email with the exam access link"""
+    # Check if email is configured
+    if not EMAIL_ENABLED:
+        print("Email is not configured. Skipping email send.")
+        return False
+        
+    try:
+        msg = EmailMessage()
+        msg['Subject'] = f"Your Access to {purchase.exam.title}"
+        msg['From'] = EMAIL_ADDRESS
+        msg['To'] = purchase.email
+        
+        exam_link = url_for('exam', token=purchase.access_token, _external=True)
+        
+        # Email content
+        content = f"""
+        Hello,
+        
+        Thank you for purchasing {purchase.exam.title}!
+        
+        You can access your exam using the link below:
+        {exam_link}
+        
+        Please note that this link is unique to you and should not be shared.
+        
+        Best regards,
+        The Exam Portal Team
+        """
+        
+        msg.set_content(content)
+        
+        # Send email
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            smtp.send_message(msg)
+            
+        print(f"Email sent successfully to {purchase.email}")
+        return True
+    except Exception as e:
+        print(f"Error sending email: {str(e)}")
+        return False
+    
+def send_result_email(to_email, exam_title, pdf_path):
+    """Send the exam result PDF to the user"""
+    if not EMAIL_ENABLED:
+        print("Email not configured. Skipping result email.")
+        return False
+
+    try:
+        msg = EmailMessage()
+        msg['Subject'] = f"Your Result for {exam_title}"
+        msg['From'] = EMAIL_ADDRESS
+        msg['To'] = to_email
+
+        msg.set_content(
+            f"""Hello,
+
+Here is the result of your recent exam: {exam_title}.
+
+Please see the attached PDF for your score and category.
+
+We recommend setting up a follow-up call to discuss your results in more detail.
+
+Best regards,
+The Exam Portal Team"""
+        )
+
+        # Attach PDF
+        with open(pdf_path, 'rb') as f:
+            msg.add_attachment(f.read(), maintype='application', subtype='pdf', filename='exam_result.pdf')
+
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            smtp.send_message(msg)
+
+        print(f"Result email sent to {to_email}")
+        return True
+    except Exception as e:
+        print(f"Failed to send result email: {e}")
+        return False
+
+# Create database tables
+def init_db():
+    with app.app_context():
+        db.create_all()
+        
+        # Add sample exams if database is empty
+        if not Exam.query.first():
+            sample_exams = [
+                Exam(
+                    title="Python Programming Basics",
+                    description="Test your knowledge of Python fundamentals including variables, data types, and control structures.",
+                    price=499.00,
+                    content="This is the content of the Python Programming Basics exam.",
+                    exam_type="content"
+                ),
+                Exam(
+                    title="Web Development Fundamentals",
+                    description="Test your understanding of HTML, CSS, and basic JavaScript concepts.",
+                    price=699.00,
+                    content="This is the content of the Web Development Fundamentals exam.",
+                    exam_type="content"
+                ),
+                Exam(
+                    title="Leadership Assessment",
+                    description="Assess your leadership style and tendencies with this comprehensive survey.",
+                    price=399.00,
+                    content="Leadership assessment introduction text.",
+                    exam_type="likert",
+                    questions=json.dumps([
+                        {"id": 1, "text": "I prefer to take charge in group situations"},
+                        {"id": 2, "text": "I find it easy to motivate others"},
+                        {"id": 3, "text": "I value teamwork over individual achievement"}
+                    ])
+                )
+            ]
+            
+            for exam in sample_exams:
+                db.session.add(exam)
+                
+            db.session.commit()
+            print("Added sample exams to the database")
+            
+def generate_result_pdf(purchase, total_score, zone_label):
+    """Generates a PDF file with exam results and returns the file path"""
+    exam = purchase.exam
+    email = purchase.email
+
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+    c = canvas.Canvas(temp_file.name, pagesize=letter)
+    width, height = letter
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, height - 50, "Exam Result Summary")
+
+    c.setFont("Helvetica", 12)
+    c.drawString(50, height - 100, f"Name / Email: {email}")
+    c.drawString(50, height - 120, f"Exam Title: {exam.title}")
+    c.drawString(50, height - 140, f"Total Score: {total_score}")
+    c.drawString(50, height - 160, f"Category: {zone_label}")
+
+    c.drawString(50, height - 200, "We recommend scheduling a follow-up call to discuss your results.")
+    c.save()
+
+    return temp_file.name
+
+if __name__ == '__main__':
+    # Check email configuration
+    if not EMAIL_ENABLED:
+        print("WARNING: Email functionality is disabled. Check your .env file for EMAIL_ADDRESS and EMAIL_PASSWORD")
+    
+    init_db()
+    app.run(debug=True)

@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% block title %}Edit Exam{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10 col-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary bg-gradient text-white">
+          <h1 class="h3 mb-0">
+            <i class="bi bi-pencil-square me-2"></i> Edit Exam
+          </h1>
+        </div>
+        <div class="card-body">
+          <form method="POST" class="needs-validation" novalidate id="exam-form">
+            <!-- Title Field -->
+            <div class="mb-3">
+              <label for="exam-title" class="form-label fw-bold">
+                <i class="bi bi-type-h1 me-1"></i> Title
+              </label>
+              <input type="text" class="form-control" id="exam-title" name="title" 
+                     value="{{ exam.title }}" required>
+              <div class="invalid-feedback">Please provide a title.</div>
+            </div>
+            
+            <!-- Description Field -->
+            <div class="mb-3">
+              <label for="exam-description" class="form-label fw-bold">
+                <i class="bi bi-file-text me-1"></i> Description
+              </label>
+              <textarea class="form-control" id="exam-description" name="description" 
+                        rows="3" required>{{ exam.description }}</textarea>
+              <div class="invalid-feedback">Please provide a description.</div>
+            </div>
+            
+            <!-- Price Field -->
+            <div class="mb-3">
+              <label for="exam-price" class="form-label fw-bold">
+                <i class="bi bi-currency-dollar me-1"></i> Price (₱)
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">₱</span>
+                <input type="number" step="0.01" class="form-control" id="exam-price" 
+                       name="price" value="{{ exam.price }}" required>
+                <div class="invalid-feedback">Please provide a valid price.</div>
+              </div>
+            </div>
+            
+            <!-- Exam Type Field -->
+            <div class="mb-3">
+              <label for="exam-type" class="form-label fw-bold">
+                <i class="bi bi-list-check me-1"></i> Exam Type
+              </label>
+              <select class="form-select" id="exam-type" name="exam_type" required>
+                <option value="content" {% if exam.exam_type == 'content' %}selected{% endif %}>
+                  Content
+                </option>
+                <option value="likert" {% if exam.exam_type == 'likert' %}selected{% endif %}>
+                  Likert Scale
+                </option>
+              </select>
+              <div class="invalid-feedback">Please select an exam type.</div>
+            </div>
+            
+            <!-- Content Field -->
+            <div class="mb-3" id="content-section">
+              <label for="exam-content" class="form-label fw-bold">
+                <i class="bi bi-file-earmark-richtext me-1"></i> Content (HTML allowed)
+              </label>
+              <textarea class="form-control" id="exam-content" name="content" 
+                        rows="5">{{ exam.content }}</textarea>
+              <small class="text-muted">HTML formatting is supported for rich content.</small>
+            </div>
+
+            <!-- Likert Questions Section -->
+            <div id="likert-section" class="mb-3 border rounded p-3 bg-light" 
+                 style="{% if exam.exam_type != 'likert' %}display: none;{% endif %}">
+              <label class="form-label fw-bold">
+                <i class="bi bi-ui-radios me-1"></i> Likert Questions
+              </label>
+              
+              <div id="likert-questions" class="mb-2">
+                {% for question in exam.get_questions() %}
+                  <div class="input-group mb-2">
+                    <span class="input-group-text">
+                      <i class="bi bi-question-circle"></i>
+                    </span>
+                    <input type="text" name="question_text" class="form-control" 
+                           value="{{ question.text }}" required>
+                    <button type="button" class="btn btn-outline-danger remove-question">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                {% endfor %}
+              </div>
+
+              <div id="likert-scale-section" class="mb-3">
+                <h5>Likert Scale Labels</h5>
+                <div id="likert-values-container">
+                  {% for val, label in exam.get_likert_scale().items() %}
+                    <div class="input-group mb-2">
+                      <input type="number" class="form-control" name="likert_value" value="{{ val }}" required>
+                      <input type="text" class="form-control" name="likert_label" value="{{ label }}" required>
+                      <button type="button" class="btn btn-outline-danger remove-likert-value">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  {% endfor %}
+                </div>
+                <button type="button" class="btn btn-outline-secondary" id="add-likert-value">+ Add Likert Value</button>
+              </div>
+              
+              <button type="button" class="btn btn-outline-primary" id="add-question">
+                <i class="bi bi-plus-circle me-1"></i> Add Question
+              </button>
+            </div>
+
+            <!-- Dynamic Scoring Rules Section -->
+            <div class="mb-3" id="scoring-rules-section" style="{% if exam.exam_type != 'likert' %}display: none;{% endif %}">
+              <label class="form-label">Scoring Rules</label>
+              <div id="scoring-rules-container" class="mb-2"></div>
+              <button type="button" class="btn btn-outline-secondary" id="add-scoring-zone">+ Add Scoring Zone</button>
+              <textarea name="scoring_rules" id="scoring_rules" class="d-none">{{ exam.scoring_rules or '' }}</textarea>
+              <div class="form-text mt-2">Zones will be serialized into JSON on save.</div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="d-flex justify-content-end gap-2 mt-4 border-top pt-3">
+              <a href="{{ url_for('admin_exams') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle me-1"></i> Cancel
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i> Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const examTypeSelect = document.getElementById('exam-type');
+  const likertSection = document.getElementById('likert-section');
+  const contentSection = document.getElementById('content-section');
+  const scoringSection = document.getElementById('scoring-rules-section');
+  const likertScaleSection = document.getElementById('likert-scale-section');
+  const questionsContainer = document.getElementById('likert-questions');
+  const addButton = document.getElementById('add-question');
+  const likertValuesContainer = document.getElementById('likert-values-container');
+  const addLikertValueBtn = document.getElementById('add-likert-value');
+
+  function toggleSectionsBasedOnType() {
+    const isLikert = examTypeSelect.value === 'likert';
+    likertSection.style.display = isLikert ? 'block' : 'none';
+    contentSection.style.display = isLikert ? 'none' : 'block';
+    scoringSection.style.display = isLikert ? 'block' : 'none';
+    likertScaleSection.style.display = isLikert ? 'block' : 'none';
+  }
+
+  addLikertValueBtn.addEventListener('click', () => {
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+      <input type="number" class="form-control" name="likert_value" required>
+      <input type="text" class="form-control" name="likert_label" required>
+      <button type="button" class="btn btn-outline-danger remove-likert-value">
+        <i class="bi bi-trash"></i>
+      </button>`;
+    likertValuesContainer.appendChild(div);
+  });
+
+  likertValuesContainer.addEventListener('click', function (e) {
+    if (e.target.closest('.remove-likert-value')) {
+      e.target.closest('.input-group').remove();
+    }
+  });
+
+  addButton.addEventListener('click', () => {
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+      <span class="input-group-text"><i class="bi bi-question-circle"></i></span>
+      <input type="text" name="question_text" class="form-control" placeholder="Enter question" required>
+      <button type="button" class="btn btn-outline-danger remove-question"><i class="bi bi-trash"></i></button>`;
+    questionsContainer.appendChild(div);
+  });
+
+  questionsContainer.addEventListener('click', (e) => {
+    if (e.target.closest('.remove-question')) {
+      e.target.closest('.input-group').remove();
+    }
+  });
+
+  // Dynamic scoring rule fields
+  const scoringRulesContainer = document.getElementById('scoring-rules-container');
+  const scoringRulesInput = document.getElementById('scoring_rules');
+  const addScoringZoneBtn = document.getElementById('add-scoring-zone');
+
+  function addScoringZone(min = '', max = '', label = '') {
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+      <input type="number" class="form-control" placeholder="Min" value="${min}" required>
+      <input type="number" class="form-control" placeholder="Max" value="${max}" required>
+      <input type="text" class="form-control" placeholder="Label" value="${label}" required>
+      <button type="button" class="btn btn-outline-danger remove-scoring-zone">×</button>`;
+    scoringRulesContainer.appendChild(div);
+  }
+
+  addScoringZoneBtn.addEventListener('click', () => addScoringZone());
+
+  scoringRulesContainer.addEventListener('click', (e) => {
+    if (e.target.closest('.remove-scoring-zone')) {
+      e.target.closest('.input-group').remove();
+    }
+  });
+
+  document.getElementById('exam-form').addEventListener('submit', function () {
+    const zones = [];
+    const groups = scoringRulesContainer.querySelectorAll('.input-group');
+    groups.forEach(group => {
+      const inputs = group.querySelectorAll('input');
+      zones.push({
+        min: parseInt(inputs[0].value, 10),
+        max: parseInt(inputs[1].value, 10),
+        label: inputs[2].value
+      });
+    });
+    scoringRulesInput.value = JSON.stringify({ zones });
+  });
+
+  // Initialize on page load
+  toggleSectionsBasedOnType();
+  examTypeSelect.addEventListener('change', toggleSectionsBasedOnType);
+
+  // Load existing scoring rules
+  {% if exam.scoring_rules %}
+    const existingScoring = {{ exam.scoring_rules|tojson|safe }};
+    if (existingScoring.zones) {
+      existingScoring.zones.forEach(zone => addScoringZone(zone.min, zone.max, zone.label));
+    }
+  {% endif %}
+});
+</script>
+{% endblock %}

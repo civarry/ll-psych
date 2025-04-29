@@ -1,0 +1,139 @@
+<!-- templates/create_exam.html -->
+{% extends 'base.html' %}
+
+{% block title %}Create Exam{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Create New Exam</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" id="exam-form">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Exam Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="price" class="form-label">Price (₱)</label>
+                        <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="exam_type" class="form-label">Exam Type</label>
+                        <select class="form-select" id="exam_type" name="exam_type" required>
+                            <option value="content">Regular Content</option>
+                            <option value="likert">Likert Scale Survey</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Content for regular exams -->
+                    <div id="content-section" class="mb-3">
+                        <label for="content" class="form-label">Exam Content</label>
+                        <textarea class="form-control" id="content" name="content" rows="10"></textarea>
+                    </div>
+                    
+                    <!-- Questions for Likert scale survey -->
+                    <div id="questions-section" class="mb-3 d-none">
+                        <h5>Survey Questions</h5>
+                        <p class="text-muted">Add questions for the Likert scale survey (Strongly Disagree to Strongly Agree)</p>
+                        
+                        <div id="questions-container">
+                            <div class="question-item mb-2">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" name="question_text" placeholder="Enter question text">
+                                    <button type="button" class="btn btn-outline-danger remove-question">×</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-outline-primary mt-2" id="add-question">
+                            <i class="bi bi-plus-circle"></i> Add Question
+                        </button>
+                    </div>
+
+                    <div class="mb-3" id="scoring-rules-section">
+                        <label for="scoring_rules" class="form-label">Scoring Rules (JSON)</label>
+                        <textarea class="form-control" id="scoring_rules" name="scoring_rules" rows="4">{{ exam.scoring_rules or '' }}</textarea>
+                        <div class="form-text">Format: {"zones":[{"min":0,"max":7,"label":"Zone I"}, {"min":8,"max":15,"label":"Zone II"}]}</div>
+                    </div>                                        
+                    
+                    <div class="text-end mt-4">
+                        <button type="submit" class="btn btn-primary">Create Exam</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const examTypeSelect = document.getElementById('exam_type');
+        const contentSection = document.getElementById('content-section');
+        const questionsSection = document.getElementById('questions-section');
+        const addQuestionBtn = document.getElementById('add-question');
+        const questionsContainer = document.getElementById('questions-container');
+        const scoringSection = document.getElementById('scoring-rules-section');
+
+        examTypeSelect.addEventListener('change', function () {
+            if (this.value === 'likert') {
+                questionsSection.classList.remove('d-none');
+                contentSection.classList.add('d-none');
+                if (scoringSection) scoringSection.classList.remove('d-none');
+            } else {
+                questionsSection.classList.add('d-none');
+                contentSection.classList.remove('d-none');
+                if (scoringSection) scoringSection.classList.add('d-none');
+            }
+        });
+        
+        // Show/hide sections based on exam type
+        examTypeSelect.addEventListener('change', function() {
+            if (this.value === 'content') {
+                contentSection.classList.remove('d-none');
+                questionsSection.classList.add('d-none');
+            } else {
+                contentSection.classList.add('d-none');
+                questionsSection.classList.remove('d-none');
+            }
+        });
+        
+        // Add question button
+        addQuestionBtn.addEventListener('click', function() {
+            const newQuestion = document.createElement('div');
+            newQuestion.className = 'question-item mb-2';
+            newQuestion.innerHTML = `
+                <div class="input-group">
+                    <input type="text" class="form-control" name="question_text" placeholder="Enter question text">
+                    <button type="button" class="btn btn-outline-danger remove-question">×</button>
+                </div>
+            `;
+            questionsContainer.appendChild(newQuestion);
+            
+            // Add event listener to the new remove button
+            newQuestion.querySelector('.remove-question').addEventListener('click', function() {
+                questionsContainer.removeChild(newQuestion);
+            });
+        });
+        
+        // Remove question button (for initial question)
+        document.querySelectorAll('.remove-question').forEach(button => {
+            button.addEventListener('click', function() {
+                const questionItem = this.closest('.question-item');
+                questionsContainer.removeChild(questionItem);
+            });
+        });
+    });
+</script>
+{% endblock %}

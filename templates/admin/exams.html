@@ -1,0 +1,101 @@
+<!-- templates/admin/exams.html -->
+{% extends 'base.html' %}
+
+{% block title %}Manage Exams{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Manage Exams</h1>
+    <div>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary me-2">Dashboard</a>
+        <a href="{{ url_for('admin_create_exam') }}" class="btn btn-primary">Create New Exam</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Price</th>
+                        <th>Created</th>
+                        <th>Purchases</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exam in exams %}
+                    <tr>
+                        <td>{{ exam.title }}</td>
+                        <td>
+                            {% if exam.exam_type == 'likert' %}
+                                <span class="badge bg-info">Likert Scale</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Content</span>
+                            {% endif %}
+                        </td>
+                        <td>₱{{ "%.2f"|format(exam.price) }}</td>
+                        <td>{{ exam.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ exam.purchases|length }}</td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('admin_edit_exam', exam_id=exam.id) }}" class="btn btn-outline-primary">Edit</a>
+                                <button type="button" class="btn btn-outline-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal{{ exam.id }}">
+                                    Delete
+                                </button>
+                            </div>
+                            
+                            <!-- Delete Modal -->
+                            <div class="modal fade" id="deleteModal{{ exam.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Confirm Delete</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-start">
+                                            <p>Are you sure you want to delete <strong>{{ exam.title }}</strong>?</p>
+                                            {% if exam.purchases|length > 0 %}
+                                                <div class="alert alert-warning">
+                                                    This exam has {{ exam.purchases|length }} purchases. 
+                                                    Deletion is not allowed.
+                                                </div>
+                                            {% else %}
+                                                <p class="text-danger">This action cannot be undone.</p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            {% if exam.purchases|length == 0 %}
+                                                <form action="{{ url_for('admin_delete_exam', exam_id=exam.id) }}" method="post">
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            {% else %}
+                                                <button type="button" class="btn btn-danger" disabled>Delete</button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <p class="text-muted mb-2">No exams found</p>
+                            <a href="{{ url_for('admin_create_exam') }}" class="btn btn-primary btn-sm">Create Your First Exam</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

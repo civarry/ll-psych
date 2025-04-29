@@ -1,0 +1,45 @@
+<!-- templates/index.html -->
+{% extends 'base.html' %}
+
+{% block title %}Welcome to Exam Portal{% endblock %}
+
+{% block content %}
+<section class="hero-section text-center">
+    <div class="container">
+        <h1 class="display-4">Advance Your Knowledge</h1>
+        <p class="lead">Access high-quality exams designed to test and improve your skills.</p>
+        <a href="{{ url_for('shop') }}" class="btn btn-primary btn-lg mt-3">Browse Exams</a>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 text-center p-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Quality Content</h5>
+                        <p class="card-text">Our exams are crafted by industry professionals to ensure relevance and quality.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 text-center p-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Instant Access</h5>
+                        <p class="card-text">Get immediate access to your purchased exams via a secure link delivered to your email.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 text-center p-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Secure Platform</h5>
+                        <p class="card-text">Our platform ensures your information and exam access remain private and secure.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,22 @@
+<!-- templates/payment_success.html -->
+{% extends 'base.html' %}
+
+{% block title %}Payment Successful{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <div class="alert alert-success" role="alert">
+        <h4 class="alert-heading">Payment Successful!</h4>
+        <p>Thank you for your purchase of <strong>{{ exam_title }}</strong>.</p>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">What's Next?</h5>
+            <p class="card-text">We've sent an email with the exam access link to your registered email address.</p>
+            <p class="card-text">You can also access your exam directly using the link below:</p>
+            <a href="{{ url_for('exam', token=access_token) }}" class="btn btn-primary">Access Your Exam</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

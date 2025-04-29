@@ -1,0 +1,76 @@
+<!-- templates/payment.html -->
+{% extends 'base.html' %}
+
+{% block title %}Payment for {{ exam_title }}{% endblock %}
+
+{% block extra_head %}
+<script src="https://js.paymongo.com/v3/paymongo.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Complete Your Payment</h4>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ exam_title }}</h5>
+                <p class="card-text"><strong>Amount:</strong> ₱{{ "%.2f"|format(amount) }}</p>
+                
+                <div id="payment-form" class="mt-3">
+                    <!-- Payment form will be rendered here -->
+                    <div class="alert alert-info" role="alert">
+                        Loading payment form... If the form doesn't appear, please check your browser console for errors.
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <p><small>Your purchase will be processed securely through PayMongo.</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize PayMongo JS with your public key
+        const paymongo = new PaymongoElement('{{ client_key }}');
+        
+        // Create and mount the payment form
+        const paymentElement = paymongo.createElement('payment', {
+            style: {
+                base: {
+                    fontSize: '16px',
+                    color: '#32325d',
+                },
+            },
+        });
+        
+        paymentElement.mount('#payment-form');
+        
+        // Handle form submission
+        paymentElement.on('submit', function(response) {
+            if (response.error) {
+                console.error(response.error);
+                alert('Payment failed: ' + response.error.message);
+            } else {
+                // Payment successful, redirect to success page
+                window.location.href = "{{ url_for('payment_success', purchase_id=purchase_id) }}";
+            }
+        });
+        
+        // Or create a payment button
+        const paymentButton = document.createElement('button');
+        paymentButton.className = 'btn btn-primary mt-3';
+        paymentButton.textContent = 'Pay Now';
+        paymentButton.addEventListener('click', function() {
+            paymentElement.submit();
+        });
+        document.querySelector('#payment-form').appendChild(paymentButton);
+    });
+</script>
+{% endblock %}
