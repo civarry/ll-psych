@@ -11,8 +11,10 @@ import requests
 import base64
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
-from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import tempfile
+from datetime import datetime
 import tempfile
 
 # Load environment variables
@@ -48,7 +50,6 @@ EMAIL_ENABLED = all([EMAIL_ADDRESS, EMAIL_PASSWORD])
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD_HASH = os.getenv('ADMIN_PASSWORD_HASH', 
                               generate_password_hash('admin123'))  # Default password for dev only
-ADMIN_PASSWORD_HASH = "scrypt:32768:8:1$VWA7sCXCH3pv5nFZ$11c1b41f72f79fc1213dbbbd7b3ca3658a9f518f959380a384d1907353bff8032126b6fc6a7e36d8363294ec2ca2395e1f13845bd488551391c8647172064925"
 
 db = SQLAlchemy(app)
 
@@ -98,8 +99,14 @@ class Purchase(db.Model):
     payment_status = db.Column(db.String(20), default='pending')
     answers = db.Column(db.Text, nullable=True)  # Store user answers as JSON
     purchased_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
     exam = db.relationship('Exam', backref=db.backref('purchases', lazy=True))
+
+class BlogPost(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 # Authentication decorator for admin routes
 def admin_required(f):
@@ -123,10 +130,76 @@ def shop():
     exams = Exam.query.all()
     return render_template('shop.html', exams=exams)
 
+@app.route('/admin/blog')
+@admin_required
+def admin_blog():
+    """Admin blog posts list"""
+    posts = BlogPost.query.order_by(BlogPost.created_at.desc()).all()
+    return render_template('admin/blog.html', posts=posts)
+
+@app.route('/admin/blog/create', methods=['GET', 'POST'])
+@admin_required
+def admin_create_blog():
+    """Create a new blog post"""
+    if request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+        
+        # Check number of posts, limit to 5
+        posts_count = BlogPost.query.count()
+        if posts_count >= 5:
+            # Find the oldest post and delete it
+            oldest_post = BlogPost.query.order_by(BlogPost.created_at.asc()).first()
+            if oldest_post:
+                db.session.delete(oldest_post)
+                flash('Oldest blog post was deleted to maintain the 5-post limit.', 'info')
+        
+        # Create the new blog post
+        new_post = BlogPost(
+            title=title,
+            content=content
+        )
+        
+        db.session.add(new_post)
+        db.session.commit()
+        
+        flash('Blog post created successfully!', 'success')
+        return redirect(url_for('admin_blog'))
+    
+    return render_template('admin/create_blog.html')
+
+@app.route('/admin/blog/edit/<int:post_id>', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_blog(post_id):
+    """Edit an existing blog post"""
+    post = BlogPost.query.get_or_404(post_id)
+    
+    if request.method == 'POST':
+        post.title = request.form.get('title')
+        post.content = request.form.get('content')
+        
+        db.session.commit()
+        flash('Blog post updated successfully!', 'success')
+        return redirect(url_for('admin_blog'))
+    
+    return render_template('admin/edit_blog.html', post=post)
+
+@app.route('/admin/blog/delete/<int:post_id>', methods=['POST'])
+@admin_required
+def admin_delete_blog(post_id):
+    """Delete a blog post"""
+    post = BlogPost.query.get_or_404(post_id)
+    
+    db.session.delete(post)
+    db.session.commit()
+    flash('Blog post deleted successfully!', 'success')
+    return redirect(url_for('admin_blog'))
+
 @app.route('/about')
 def about():
     """About page with psychologist information and blog posts"""
-    return render_template('about.html')
+    posts = BlogPost.query.order_by(BlogPost.created_at.desc()).all()
+    return render_template('about.html', posts=posts)
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -570,33 +643,53 @@ def init_db():
         if not Exam.query.first():
             sample_exams = [
                 Exam(
-                    title="Python Programming Basics",
-                    description="Test your knowledge of Python fundamentals including variables, data types, and control structures.",
+                    title="Emotional Resilience Assessment",
+                    description="Evaluate your ability to adapt to stress and bounce back from adversity using a validated psychological scale.",
                     price=499.00,
-                    content="This is the content of the Python Programming Basics exam.",
-                    exam_type="content"
-                ),
-                Exam(
-                    title="Web Development Fundamentals",
-                    description="Test your understanding of HTML, CSS, and basic JavaScript concepts.",
-                    price=699.00,
-                    content="This is the content of the Web Development Fundamentals exam.",
-                    exam_type="content"
-                ),
-                Exam(
-                    title="Leadership Assessment",
-                    description="Assess your leadership style and tendencies with this comprehensive survey.",
-                    price=399.00,
-                    content="Leadership assessment introduction text.",
+                    content="This assessment helps you understand your emotional coping mechanisms and adaptability.",
                     exam_type="likert",
                     questions=json.dumps([
-                        {"id": 1, "text": "I prefer to take charge in group situations"},
-                        {"id": 2, "text": "I find it easy to motivate others"},
-                        {"id": 3, "text": "I value teamwork over individual achievement"}
+                        {"id": 1, "text": "I stay calm under pressure."},
+                        {"id": 2, "text": "I recover quickly from setbacks."},
+                        {"id": 3, "text": "I find it easy to manage my emotions in challenging situations."}
+                    ])
+                ),
+                Exam(
+                    title="Cognitive Flexibility Inventory",
+                    description="Assess your ability to shift perspectives and adapt to changing environments and situations.",
+                    price=549.00,
+                    content="This exam explores how you respond to new information, unexpected changes, and mental challenges.",
+                    exam_type="likert",
+                    questions=json.dumps([
+                        {"id": 1, "text": "I can easily consider multiple options before making a decision."},
+                        {"id": 2, "text": "I can view situations from different perspectives."},
+                        {"id": 3, "text": "When faced with a new problem, I try to think about it in new ways."}
+                    ])
+                ),
+                Exam(
+                    title="Well-Being Self-Check",
+                    description="Gain insights into your current emotional, social, and psychological well-being.",
+                    price=399.00,
+                    content="A reflective self-assessment to explore how you are doing across different areas of well-being.",
+                    exam_type="likert",
+                    questions=json.dumps([
+                        {"id": 1, "text": "I feel a sense of purpose in my daily activities."},
+                        {"id": 2, "text": "I have positive relationships with others."},
+                        {"id": 3, "text": "I generally feel satisfied with my life."}
                     ])
                 )
             ]
+
             
+        if not BlogPost.query.first():
+            sample_post = BlogPost(
+                title="Welcome to Our Blog",
+                content="This is our first blog post. Stay tuned for updates on our services and mental health tips."
+            )
+            db.session.add(sample_post)
+            db.session.commit()
+            print("Added sample blog post to the database")
+
             for exam in sample_exams:
                 db.session.add(exam)
                 
@@ -604,32 +697,54 @@ def init_db():
             print("Added sample exams to the database")
             
 def generate_result_pdf(purchase, total_score, zone_label):
-    """Generates a PDF file with exam results and returns the file path"""
+    """Generates a professional PDF summary of the exam results and returns the file path."""
     exam = purchase.exam
     email = purchase.email
+    exam_date = datetime.utcnow().strftime('%B %d, %Y')
 
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
     c = canvas.Canvas(temp_file.name, pagesize=letter)
     width, height = letter
 
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(50, height - 50, "Exam Result Summary")
+    # Header
+    c.setFont("Helvetica-Bold", 18)
+    c.drawString(50, height - 60, "Assessment Report")
 
     c.setFont("Helvetica", 12)
-    c.drawString(50, height - 100, f"Name / Email: {email}")
-    c.drawString(50, height - 120, f"Exam Title: {exam.title}")
-    c.drawString(50, height - 140, f"Total Score: {total_score}")
-    c.drawString(50, height - 160, f"Category: {zone_label}")
+    c.drawString(50, height - 90, f"Date: {exam_date}")
+    c.drawString(50, height - 110, f"Participant Email: {email}")
+    c.drawString(50, height - 130, f"Assessment Title: {exam.title}")
 
-    c.drawString(50, height - 200, "We recommend scheduling a follow-up call to discuss your results.")
+    # Divider
+    c.line(50, height - 145, width - 50, height - 145)
+
+    # Results section
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, height - 170, "Results Summary")
+
+    c.setFont("Helvetica", 12)
+    c.drawString(50, height - 190, f"Total Score: {total_score}")
+    c.drawString(50, height - 210, f"Interpreted Category: {zone_label}")
+
+    # Recommendation
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, height - 250, "Next Steps")
+
+    c.setFont("Helvetica", 12)
+    c.drawString(50, height - 270, "We encourage you to schedule a follow-up session to discuss your results in detail.")
+    c.drawString(50, height - 285, "Our licensed professionals can help you better understand your scores and support your goals.")
+
+    # Footer
+    c.setFont("Helvetica-Oblique", 10)
+    c.drawString(50, 40, "This assessment is for educational and self-reflective purposes only and does not constitute a diagnosis.")
+
     c.save()
-
     return temp_file.name
-print(f"Hello: {generate_password_hash('admin123')}")
+
 if __name__ == '__main__':
     # Check email configuration
     if not EMAIL_ENABLED:
         print("WARNING: Email functionality is disabled. Check your .env file for EMAIL_ADDRESS and EMAIL_PASSWORD")
     
     init_db()
-    app.run(debug=True)
+    app.run(debug=False, host='0.0.0.0')

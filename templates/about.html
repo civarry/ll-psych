@@ -13,10 +13,12 @@
     <div class="card-body">
       <div class="row align-items-center">
         <div class="col-md-4 mb-4 mb-md-0 text-center">
-          <div class="rounded-circle bg-light p-3 d-inline-block shadow-sm mb-3">
-            <i class="bi bi-person-circle text-primary" style="font-size: 8rem;"></i>
-          </div>
-        </div>
+            <div class="rounded-circle overflow-hidden bg-light d-inline-block shadow-sm mb-3" style="width: 14rem; height: 14rem;">
+              <img src="https://ll-psychological-services.myshopify.com/cdn/shop/files/473568151_576419638487626_8560879448081323615_n.jpg?v=1738648161" 
+                   alt="Profile Image" 
+                   class="img-fluid h-100 w-100 object-fit-cover">
+            </div>
+          </div>          
         <div class="col-md-8">
           <h2 class="h4 mb-3 text-primary fw-bold">Meet Your Psychologist</h2>
           <p class="lead">Leo Lestere M. Tao-Tao is a dedicated mental health professional with extensive credentials, including being a Licensed Professional Teacher, Registered Psychometrician, Registered Psychologist, and Clinical Psychologist.</p>
@@ -51,7 +53,7 @@
             <div class="col">
               <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body text-center">
-                  <i class="bi bi-graph-up text-primary mb-3" style="font-size: 2rem;"></i>
+                  <i class="bi bi-clipboard-check text-primary mb-3" style="font-size: 2rem;"></i>
                   <h3 class="h6 fw-bold">Registered Psychometrician</h3>
                 </div>
               </div>
@@ -59,7 +61,7 @@
             <div class="col">
               <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body text-center">
-                  <i class="bi bi-brain text-primary mb-3" style="font-size: 2rem;"></i>
+                  <i class="bi bi-person-badge text-primary mb-3" style="font-size: 2rem;"></i>
                   <h3 class="h6 fw-bold">Registered Psychologist</h3>
                 </div>
               </div>
@@ -67,7 +69,7 @@
             <div class="col">
               <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body text-center">
-                  <i class="bi bi-clipboard2-pulse text-primary mb-3" style="font-size: 2rem;"></i>
+                  <i class="bi bi-heart-pulse text-primary mb-3" style="font-size: 2rem;"></i>
                   <h3 class="h6 fw-bold">Clinical Psychologist</h3>
                 </div>
               </div>
@@ -122,6 +124,7 @@
     </div>
   </div>
 
+<!-- Blog Section in about.html - Replace the existing blog section with this -->
   <!-- Blog Section -->
   <div class="card shadow">
     <div class="card-header bg-primary bg-gradient text-white">
@@ -130,25 +133,25 @@
       </h2>
     </div>
     <div class="card-body">
-      <div class="card mb-3 border-0 shadow-sm">
-        <div class="card-body">
-          <h3 class="h5 fw-bold">This is test blog</h3>
-          <div class="text-muted mb-2">
-            <i class="bi bi-calendar3 me-1"></i> February 5, 2025
+      {% if posts %}
+        {% for post in posts %}
+          <div class="card mb-3 border-0 shadow-sm">
+            <div class="card-body">
+              <h3 class="h5 fw-bold">{{ post.title }}</h3>
+              <div class="text-muted mb-2">
+                <i class="bi bi-calendar3 me-1"></i> {{ post.created_at.strftime('%B %d, %Y') }}
+              </div>
+              <div>{{ post.content|safe }}</div>
+            </div>
           </div>
-          <p>Sample update</p>
-          <a href="#" class="btn btn-sm btn-outline-primary">Read More</a>
+        {% endfor %}
+      {% else %}
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i> No blog posts available at the moment. Check back soon!
         </div>
-      </div>
-      
-      <div class="text-center mt-4">
-        <a href="#" class="btn btn-outline-primary">
-          <i class="bi bi-journals me-1"></i> View All Blog Posts
-        </a>
-      </div>
+      {% endif %}
     </div>
   </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
