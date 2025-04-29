@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}Exam Portal{% endblock %}</title>
+    <title>{% block title %}LLPsychServices{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
@@ -14,6 +14,7 @@
         body {
             display: flex;
             flex-direction: column;
+            background-color: #f8f9fa;
         }
 
         main {
@@ -29,27 +30,72 @@
         }
 
         .hero-section {
-            background-color: #f8f9fa;
+            background-color: #f0f4f8;
             padding: 60px 0;
+        }
+        
+        .navbar {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: #0d6efd;
+        }
+        
+        .card {
+            border-radius: 0.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            border-top-left-radius: calc(0.5rem - 1px);
+            border-top-right-radius: calc(0.5rem - 1px);
+        }
+        
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
         }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">LLPsychServices</a>
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="bi bi-activity me-2"></i>LLPsychServices
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="bi bi-house-door me-1"></i>Home
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('shop') }}">Shop</a>
+                        <a class="nav-link" href="{{ url_for('shop') }}">
+                            <i class="bi bi-cart me-1"></i>Shop
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('about') }}">
+                            <i class="bi bi-info-circle me-1"></i>About
+                        </a>
                     </li>
                 </ul>
             </div>
@@ -61,8 +107,8 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
-                        {{ message }}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>{{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 {% endfor %}
@@ -71,14 +117,34 @@
     </div>
 
     <!-- Main Content -->
-    <main class="container py-4">
+    <main class="py-4">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
-    <footer class="bg-light text-center py-3 border-top">
+    <footer class="bg-white text-center py-3 border-top shadow-sm">
         <div class="container">
-            <small class="text-muted">&copy; 2025 Exam Portal. All rights reserved.</small>
+            <div class="row align-items-center">
+                <div class="col-md-4 text-md-start mb-2 mb-md-0">
+                    <a href="{{ url_for('index') }}" class="text-decoration-none text-primary fw-bold">
+                        <i class="bi bi-activity me-1"></i>LLPsychServices
+                    </a>
+                </div>
+                <div class="col-md-4 mb-2 mb-md-0">
+                    <small class="text-muted">&copy; 2025 LLPsychServices. All rights reserved.</small>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="#" class="text-decoration-none text-muted me-3">
+                        <i class="bi bi-facebook"></i>
+                    </a>
+                    <a href="#" class="text-decoration-none text-muted me-3">
+                        <i class="bi bi-twitter-x"></i>
+                    </a>
+                    <a href="#" class="text-decoration-none text-muted">
+                        <i class="bi bi-instagram"></i>
+                    </a>
+                </div>
+            </div>
         </div>
     </footer>
 

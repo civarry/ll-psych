@@ -1,45 +1,155 @@
 <!-- templates/index.html -->
 {% extends 'base.html' %}
 
-{% block title %}Welcome to Exam Portal{% endblock %}
+{% block title %}Welcome to LLPsychServices{% endblock %}
 
 {% block content %}
-<section class="hero-section text-center">
-    <div class="container">
-        <h1 class="display-4">Advance Your Knowledge</h1>
-        <p class="lead">Access high-quality exams designed to test and improve your skills.</p>
-        <a href="{{ url_for('shop') }}" class="btn btn-primary btn-lg mt-3">Browse Exams</a>
+<!-- Hero Section -->
+<section class="py-5 bg-primary bg-gradient text-white">
+  <div class="container py-md-4">
+    <div class="row align-items-center">
+      <div class="col-lg-7 text-center text-lg-start mb-4 mb-lg-0">
+        <h1 class="display-4 fw-bold mb-3">Advance Your Knowledge</h1>
+        <p class="lead mb-4">Access high-quality exams designed to test and improve your skills.</p>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+          <a href="{{ url_for('shop') }}" class="btn btn-light btn-lg px-4 me-md-2">
+            <i class="bi bi-search me-2"></i>Browse Exams
+          </a>
+          <a href="#features" class="btn btn-outline-light btn-lg px-4">
+            <i class="bi bi-info-circle me-2"></i>Learn More
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-5 d-none d-lg-block text-center">
+        <div class="p-5">
+          <i class="bi bi-mortarboard-fill display-1 text-light opacity-75"></i>
+        </div>
+      </div>
     </div>
+  </div>
 </section>
 
-<section class="py-5">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 text-center p-4">
-                    <div class="card-body">
-                        <h5 class="card-title">Quality Content</h5>
-                        <p class="card-text">Our exams are crafted by industry professionals to ensure relevance and quality.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 text-center p-4">
-                    <div class="card-body">
-                        <h5 class="card-title">Instant Access</h5>
-                        <p class="card-text">Get immediate access to your purchased exams via a secure link delivered to your email.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 text-center p-4">
-                    <div class="card-body">
-                        <h5 class="card-title">Secure Platform</h5>
-                        <p class="card-text">Our platform ensures your information and exam access remain private and secure.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+<!-- Features Section -->
+<section id="features" class="py-5">
+  <div class="container py-md-4">
+    <div class="text-center mb-5">
+      <h2 class="fw-bold">Why Choose Our Platform</h2>
+      <p class="text-muted">Discover the benefits of our comprehensive exam system</p>
     </div>
+    
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 text-center">
+          <div class="card-body p-4">
+            <div class="feature-icon bg-primary bg-gradient text-white rounded-circle mb-3 mx-auto" 
+                 style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+              <i class="bi bi-award fs-4"></i>
+            </div>
+            <h5 class="card-title fw-bold">Quality Content</h5>
+            <p class="card-text text-muted">Our exams are crafted by industry professionals to ensure relevance and quality.</p>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0 pb-4">
+            <a href="{{ url_for('shop') }}" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-arrow-right me-1"></i>Browse Content
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 text-center">
+          <div class="card-body p-4">
+            <div class="feature-icon bg-success bg-gradient text-white rounded-circle mb-3 mx-auto" 
+                 style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+              <i class="bi bi-lightning-charge fs-4"></i>
+            </div>
+            <h5 class="card-title fw-bold">Instant Access</h5>
+            <p class="card-text text-muted">Get immediate access to your purchased exams via a secure link delivered to your email.</p>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0 pb-4">
+            <a href="{{ url_for('shop') }}" class="btn btn-outline-success btn-sm">
+              <i class="bi bi-arrow-right me-1"></i>Get Started
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 text-center">
+          <div class="card-body p-4">
+            <div class="feature-icon bg-info bg-gradient text-white rounded-circle mb-3 mx-auto" 
+                 style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+              <i class="bi bi-shield-check fs-4"></i>
+            </div>
+            <h5 class="card-title fw-bold">Secure Platform</h5>
+            <p class="card-text text-muted">Our platform ensures your information and exam access remain private and secure.</p>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0 pb-4">
+            <a href="{{ url_for('shop') }}" class="btn btn-outline-info btn-sm">
+              <i class="bi bi-arrow-right me-1"></i>Learn More
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials/Additional Info -->
+<section class="py-5 bg-light">
+  <div class="container py-md-4">
+    <div class="row align-items-center">
+      <div class="col-lg-6 mb-4 mb-lg-0">
+        <h2 class="fw-bold mb-3">Take Your Next Step</h2>
+        <p class="lead mb-4">Our platform provides the tools you need to assess your knowledge and skills in various subjects.</p>
+        <div class="d-flex align-items-center mb-3">
+          <div class="feature-icon bg-primary text-white rounded-circle me-3" 
+               style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+            <i class="bi bi-check-lg"></i>
+          </div>
+          <p class="mb-0">Access from anywhere, anytime</p>
+        </div>
+        <div class="d-flex align-items-center mb-3">
+          <div class="feature-icon bg-primary text-white rounded-circle me-3" 
+               style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+            <i class="bi bi-check-lg"></i>
+          </div>
+          <p class="mb-0">Detailed performance insights</p>
+        </div>
+        <div class="d-flex align-items-center">
+          <div class="feature-icon bg-primary text-white rounded-circle me-3" 
+               style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+            <i class="bi bi-check-lg"></i>
+          </div>
+          <p class="mb-0">Professional assessment methodology</p>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card shadow border-0">
+          <div class="card-body p-4 p-md-5">
+            <h3 class="fw-bold mb-4 text-center">Ready to Get Started?</h3>
+            <p class="text-center mb-4">Browse our collection of high-quality exams and start your journey today.</p>
+            <div class="d-grid gap-2">
+              <a href="{{ url_for('shop') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-shop me-2"></i>Visit Our Shop
+              </a>
+              <!-- Add a contact button or additional CTA if needed -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer CTA -->
+<section class="py-5 bg-primary bg-gradient text-white text-center">
+  <div class="container py-4">
+    <h2 class="fw-bold mb-3">Start Your Learning Journey Today</h2>
+    <p class="lead mb-4">Find the right exam to take your skills to the next level</p>
+    <a href="{{ url_for('shop') }}" class="btn btn-light btn-lg px-5">
+      <i class="bi bi-arrow-right-circle me-2"></i>Get Started
+    </a>
+  </div>
 </section>
 {% endblock %}

@@ -4,216 +4,155 @@
 {% block title %}Create Exam{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Create New Exam</h1>
-    <a href="{{ url_for('admin_exams') }}" class="btn btn-outline-secondary">Back to Exams</a>
-</div>
-
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body">
-                <form method="post" id="exam-form">
-                    <div class="row mb-3">
-                        <div class="col-md-8">
-                            <label for="title" class="form-label">Exam Title</label>
-                            <input type="text" class="form-control" id="title" name="title" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="price" class="form-label">Price (₱)</label>
-                            <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="exam_type" class="form-label">Exam Type</label>
-                        <select class="form-select" id="exam_type" name="exam_type" required>
-                            <option value="content">Regular Content</option>
-                            <option value="likert">Likert Scale Survey</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Content for regular exams -->
-                    <div id="content-section" class="mb-3">
-                        <label for="content" class="form-label">Exam Content</label>
-                        <textarea class="form-control" id="content" name="content" rows="10"></textarea>
-                        <div class="form-text">You can use HTML formatting for rich content.</div>
-                    </div>
-                    
-                    <!-- Questions for Likert scale survey -->
-                    <div id="questions-section" class="mb-3 d-none">
-                        <h5>Survey Questions</h5>
-                        <p class="text-muted">Add questions for the Likert scale survey (Strongly Disagree to Strongly Agree)</p>
-                        
-                        <div id="questions-container">
-                            <div class="question-item mb-2">
-                                <div class="input-group">
-                                    <input type="text" class="form-control" name="question_text" placeholder="Enter question text">
-                                    <button type="button" class="btn btn-outline-danger remove-question">×</button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <button type="button" class="btn btn-outline-primary mt-2" id="add-question">
-                            <i class="bi bi-plus-circle"></i> Add Question
-                        </button>
-                    </div>
-
-                    <!-- Likert Scale Values -->
-                    <div id="likert-scale-section" class="mb-3 d-none">
-                        <h5>Likert Scale Labels</h5>
-                        <p class="text-muted">Define labels for Likert values (e.g., 0: Never, 1: Monthly)</p>
-                        <div id="likert-values-container">
-                            <div class="input-group mb-2">
-                                <input type="number" class="form-control" name="likert_value" placeholder="Value (e.g., 0)">
-                                <input type="text" class="form-control" name="likert_label" placeholder="Label (e.g., Never)">
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-outline-secondary" id="add-likert-value">+ Add Likert Value</button>
-                    </div>
-
-                    <!-- Friendly Scoring Rules Input -->
-                    <div id="scoring-rules-section" class="mb-3 d-none">
-                        <h5>Scoring Rules</h5>
-                        <p class="text-muted">Define score zones (e.g., 0–7: Education)</p>
-                        <div id="scoring-rules-container">
-                            <div class="row mb-2 scoring-rule-item">
-                                <div class="col-md-3">
-                                    <input type="number" class="form-control" name="score_min" placeholder="Min Score">
-                                </div>
-                                <div class="col-md-3">
-                                    <input type="number" class="form-control" name="score_max" placeholder="Max Score">
-                                </div>
-                                <div class="col-md-5">
-                                    <input type="text" class="form-control" name="score_label" placeholder="Label (e.g., Zone I: Education)">
-                                </div>
-                                <div class="col-md-1">
-                                    <button type="button" class="btn btn-outline-danger remove-scoring-rule">×</button>
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-outline-secondary" id="add-scoring-rule">+ Add Scoring Rule</button>
-                        <input type="hidden" id="scoring_rules" name="scoring_rules">
-                    </div>
-
-                    <div class="text-end mt-4">
-                        <button type="submit" class="btn btn-primary">Create Exam</button>
-                    </div>
-                </form>
-            </div>
+<div class="container py-3 py-md-4">
+  <div class="row justify-content-center">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-primary bg-gradient text-white">
+          <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center">
+            <h1 class="h4 mb-2 mb-sm-0 fw-bold">
+              <i class="bi bi-plus-circle me-2"></i> Create New Exam
+            </h1>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light btn-sm">
+              <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+            </a>
+          </div>
         </div>
+        <div class="card-body">
+          <form method="post" id="exam-form" class="needs-validation" novalidate>
+            <div class="row mb-3">
+              <div class="col-md-8 mb-3 mb-md-0">
+                <label for="title" class="form-label fw-bold">
+                  <i class="bi bi-type-h1 me-1"></i> Exam Title
+                </label>
+                <input type="text" class="form-control" id="title" name="title" required>
+                <div class="invalid-feedback">Please provide a title.</div>
+              </div>
+              <div class="col-md-4">
+                <label for="price" class="form-label fw-bold">
+                  <i class="bi bi-currency-dollar me-1"></i> Price (₱)
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text">₱</span>
+                  <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
+                  <div class="invalid-feedback">Please provide a valid price.</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="description" class="form-label fw-bold">
+                <i class="bi bi-file-text me-1"></i> Description
+              </label>
+              <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+              <div class="invalid-feedback">Please provide a description.</div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="exam-type" class="form-label fw-bold">
+                <i class="bi bi-list-check me-1"></i> Exam Type
+              </label>
+              <select class="form-select" id="exam-type" name="exam_type" required>
+                <option value="content">Regular Content</option>
+                <option value="likert">Likert Scale Survey</option>
+              </select>
+              <div class="invalid-feedback">Please select an exam type.</div>
+            </div>
+            
+            <!-- Content Field -->
+            <div class="mb-3" id="content-section">
+              <label for="content" class="form-label fw-bold">
+                <i class="bi bi-file-earmark-richtext me-1"></i> Exam Content (HTML allowed)
+              </label>
+              <textarea class="form-control" id="content" name="content" rows="5"></textarea>
+              <small class="text-muted">HTML formatting is supported for rich content.</small>
+            </div>
+            
+            <!-- Likert Questions Section -->
+            <div id="likert-section" class="mb-3 border rounded p-2 p-sm-3 bg-light d-none">
+              <div class="mb-3">
+                <label class="form-label fw-bold">
+                  <i class="bi bi-ui-radios me-1"></i> Likert Questions
+                </label>
+                <p class="text-muted small">Add questions for the Likert scale survey</p>
+                
+                <div id="likert-questions" class="mb-2">
+                  <!-- Questions will be added here by JavaScript -->
+                  <div class="input-group mb-2">
+                    <span class="input-group-text"><i class="bi bi-question-circle"></i></span>
+                    <input type="text" name="question_text" class="form-control" placeholder="Enter question text" required>
+                    <button type="button" class="btn btn-outline-danger remove-question"><i class="bi bi-trash"></i></button>
+                  </div>
+                </div>
+
+                <button type="button" class="btn btn-outline-primary btn-sm w-100 w-sm-auto mt-2" id="add-question">
+                  <i class="bi bi-plus-circle me-1"></i> Add Question
+                </button>
+              </div>
+
+              <div id="likert-scale-section" class="mb-3 border-top pt-3 mt-3">
+                <h5 class="fw-bold fs-6">Likert Scale Labels</h5>
+                <p class="text-muted small">Define labels for Likert values (e.g., 0: Never, 1: Monthly)</p>
+                <div id="likert-values-container">
+                  <!-- Scale values will be added here by JavaScript -->
+                  <div class="input-group mb-2">
+                    <span class="input-group-text">Value</span>
+                    <input type="number" class="form-control" name="likert_value" placeholder="Value (e.g., 0)" required>
+                    <span class="input-group-text">Label</span>
+                    <input type="text" class="form-control" name="likert_label" placeholder="Label (e.g., Never)" required>
+                    <button type="button" class="btn btn-outline-danger remove-likert-value">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm w-100 w-sm-auto mt-2" id="add-likert-value">
+                  <i class="bi bi-plus-circle me-1"></i> Add Likert Value
+                </button>
+              </div>
+            </div>
+
+            <!-- Dynamic Scoring Rules Section -->
+            <div class="mb-3 d-none" id="scoring-rules-section">
+              <label class="form-label fw-bold">
+                <i class="bi bi-graph-up me-1"></i> Scoring Rules
+              </label>
+              <p class="text-muted small">Define score zones (e.g., 0–7: Education)</p>
+              <div id="scoring-rules-container" class="mb-2">
+                <!-- Scoring rules will be added here -->
+                <div class="input-group mb-2">
+                  <span class="input-group-text">Min</span>
+                  <input type="number" class="form-control" placeholder="Min Score" required>
+                  <span class="input-group-text">Max</span>
+                  <input type="number" class="form-control" placeholder="Max Score" required>
+                  <span class="input-group-text">Label</span>
+                  <input type="text" class="form-control" placeholder="Label (e.g., Zone I: Education)" required>
+                  <button type="button" class="btn btn-outline-danger remove-scoring-zone"><i class="bi bi-trash"></i></button>
+                </div>
+              </div>
+              <button type="button" class="btn btn-outline-secondary btn-sm w-100 w-sm-auto mt-2" id="add-scoring-zone">
+                <i class="bi bi-plus-circle me-1"></i> Add Scoring Zone
+              </button>
+              <input type="hidden" id="scoring_rules" name="scoring_rules">
+              <div class="form-text mt-2 small">Zones will be serialized into JSON on save.</div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="d-flex flex-column flex-sm-row justify-content-end gap-2 mt-4 border-top pt-3">
+              <a href="{{ url_for('admin_exams') }}" class="btn btn-outline-secondary w-100 w-sm-auto mb-2 mb-sm-0">
+                <i class="bi bi-x-circle me-1"></i> Cancel
+              </a>
+              <button type="submit" class="btn btn-primary w-100 w-sm-auto">
+                <i class="bi bi-save me-1"></i> Create Exam
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const examTypeSelect = document.getElementById('exam_type');
-        const contentSection = document.getElementById('content-section');
-        const questionsSection = document.getElementById('questions-section');
-        const scoringRulesSection = document.getElementById('scoring-rules-section');
-        const likertScaleSection = document.getElementById('likert-scale-section');
-        const addQuestionBtn = document.getElementById('add-question');
-        const questionsContainer = document.getElementById('questions-container');
-        const addLikertBtn = document.getElementById('add-likert-value');
-        const likertContainer = document.getElementById('likert-values-container');
-        const addScoringRuleBtn = document.getElementById('add-scoring-rule');
-        const scoringRulesContainer = document.getElementById('scoring-rules-container');
-        const scoringRulesInput = document.getElementById('scoring_rules');
-        const form = document.getElementById('exam-form');
-
-        examTypeSelect.addEventListener('change', function() {
-            if (this.value === 'content') {
-                contentSection.classList.remove('d-none');
-                questionsSection.classList.add('d-none');
-                scoringRulesSection.classList.add('d-none');
-                likertScaleSection.classList.add('d-none');
-            } else {
-                contentSection.classList.add('d-none');
-                questionsSection.classList.remove('d-none');
-                scoringRulesSection.classList.remove('d-none');
-                likertScaleSection.classList.remove('d-none');
-            }
-        });
-
-        addLikertBtn.addEventListener('click', function() {
-            const newInputGroup = document.createElement('div');
-            newInputGroup.className = 'input-group mb-2';
-            newInputGroup.innerHTML = `
-                <input type="number" class="form-control" name="likert_value" placeholder="Value">
-                <input type="text" class="form-control" name="likert_label" placeholder="Label">
-            `;
-            likertContainer.appendChild(newInputGroup);
-        });
-
-        addQuestionBtn.addEventListener('click', function() {
-            const newQuestion = document.createElement('div');
-            newQuestion.className = 'question-item mb-2';
-            newQuestion.innerHTML = `
-                <div class="input-group">
-                    <input type="text" class="form-control" name="question_text" placeholder="Enter question text">
-                    <button type="button" class="btn btn-outline-danger remove-question">×</button>
-                </div>
-            `;
-            questionsContainer.appendChild(newQuestion);
-
-            newQuestion.querySelector('.remove-question').addEventListener('click', function() {
-                questionsContainer.removeChild(newQuestion);
-            });
-        });
-
-        document.querySelectorAll('.remove-question').forEach(button => {
-            button.addEventListener('click', function() {
-                const questionItem = this.closest('.question-item');
-                questionsContainer.removeChild(questionItem);
-            });
-        });
-
-        // Add scoring rule row
-        addScoringRuleBtn.addEventListener('click', function () {
-            const ruleRow = document.createElement('div');
-            ruleRow.className = 'row mb-2 scoring-rule-item';
-            ruleRow.innerHTML = `
-                <div class="col-md-3">
-                    <input type="number" class="form-control" name="score_min" placeholder="Min Score">
-                </div>
-                <div class="col-md-3">
-                    <input type="number" class="form-control" name="score_max" placeholder="Max Score">
-                </div>
-                <div class="col-md-5">
-                    <input type="text" class="form-control" name="score_label" placeholder="Label">
-                </div>
-                <div class="col-md-1">
-                    <button type="button" class="btn btn-outline-danger remove-scoring-rule">×</button>
-                </div>
-            `;
-            scoringRulesContainer.appendChild(ruleRow);
-
-            ruleRow.querySelector('.remove-scoring-rule').addEventListener('click', () => {
-                scoringRulesContainer.removeChild(ruleRow);
-            });
-        });
-
-        // Serialize scoring rules to hidden input on form submit
-        form.addEventListener('submit', function () {
-            const rules = [];
-            const items = document.querySelectorAll('.scoring-rule-item');
-            items.forEach(item => {
-                const min = item.querySelector('input[name="score_min"]').value;
-                const max = item.querySelector('input[name="score_max"]').value;
-                const label = item.querySelector('input[name="score_label"]').value;
-                if (min !== '' && max !== '' && label !== '') {
-                    rules.push({ min: parseInt(min), max: parseInt(max), label });
-                }
-            });
-            scoringRulesInput.value = JSON.stringify({ zones: rules });
-        });
-    });
-</script>    
+<script src="{{ url_for('static', filename='js/exam-form.js') }}"></script>
 {% endblock %}

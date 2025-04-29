@@ -4,19 +4,55 @@
 {% block title %}Payment Successful{% endblock %}
 
 {% block content %}
-<div class="text-center">
-    <div class="alert alert-success" role="alert">
-        <h4 class="alert-heading">Payment Successful!</h4>
-        <p>Thank you for your purchase of <strong>{{ exam_title }}</strong>.</p>
-    </div>
-    
-    <div class="card mt-4">
-        <div class="card-body">
-            <h5 class="card-title">What's Next?</h5>
-            <p class="card-text">We've sent an email with the exam access link to your registered email address.</p>
-            <p class="card-text">You can also access your exam directly using the link below:</p>
-            <a href="{{ url_for('exam', token=access_token) }}" class="btn btn-primary">Access Your Exam</a>
+<div class="container py-3 py-md-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8">
+      <div class="card shadow">
+        <div class="card-header bg-success bg-gradient text-white">
+          <div class="d-flex justify-content-center">
+            <h1 class="h4 mb-0 fw-bold">
+              <i class="bi bi-check-circle-fill me-2"></i> Payment Successful
+            </h1>
+          </div>
         </div>
+        <div class="card-body text-center p-4">
+          <div class="mb-4">
+            <div class="display-1 text-success mb-3">
+              <i class="bi bi-emoji-smile"></i>
+            </div>
+            <h2 class="h5 fw-bold">Thank you for your purchase!</h2>
+            <p class="mb-0">You have successfully purchased <strong>{{ exam_title }}</strong>.</p>
+          </div>
+          
+          <div class="card bg-light border-0 shadow-sm mb-4">
+            <div class="card-body">
+              <h5 class="card-title fw-bold">
+                <i class="bi bi-envelope me-2"></i> Check Your Email
+              </h5>
+              <p class="card-text">We've sent an email with the exam access details to your registered email address.</p>
+            </div>
+          </div>
+          
+          <div class="card bg-light border-0 shadow-sm mb-4">
+            <div class="card-body">
+              <h5 class="card-title fw-bold">
+                <i class="bi bi-file-earmark-text me-2"></i> Access Your Exam
+              </h5>
+              <p class="card-text">You can immediately access your exam using the link below:</p>
+              <a href="{{ url_for('exam', token=access_token) }}" class="btn btn-primary mt-2">
+                <i class="bi bi-box-arrow-up-right me-1"></i> Access Your Exam
+              </a>
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-house-door me-1"></i> Return to Home
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}

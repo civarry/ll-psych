@@ -48,6 +48,7 @@ EMAIL_ENABLED = all([EMAIL_ADDRESS, EMAIL_PASSWORD])
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD_HASH = os.getenv('ADMIN_PASSWORD_HASH', 
                               generate_password_hash('admin123'))  # Default password for dev only
+ADMIN_PASSWORD_HASH = "scrypt:32768:8:1$VWA7sCXCH3pv5nFZ$11c1b41f72f79fc1213dbbbd7b3ca3658a9f518f959380a384d1907353bff8032126b6fc6a7e36d8363294ec2ca2395e1f13845bd488551391c8647172064925"
 
 db = SQLAlchemy(app)
 
@@ -121,6 +122,11 @@ def shop():
     """Shop page listing all available exams"""
     exams = Exam.query.all()
     return render_template('shop.html', exams=exams)
+
+@app.route('/about')
+def about():
+    """About page with psychologist information and blog posts"""
+    return render_template('about.html')
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -619,7 +625,7 @@ def generate_result_pdf(purchase, total_score, zone_label):
     c.save()
 
     return temp_file.name
-
+print(f"Hello: {generate_password_hash('admin123')}")
 if __name__ == '__main__':
     # Check email configuration
     if not EMAIL_ENABLED:

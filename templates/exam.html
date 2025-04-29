@@ -4,72 +4,121 @@
 {% block title %}{{ exam.title }}{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header bg-primary text-white">
-        <h4 class="mb-0">{{ exam.title }}</h4>
-    </div>
-    <div class="card-body">
-        {% if exam.exam_type == 'content' %}
+<div class="container py-3 py-md-4">
+  <div class="row justify-content-center">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-primary bg-gradient text-white">
+          <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center">
+            <h1 class="h4 mb-2 mb-sm-0 fw-bold">
+              <i class="bi bi-file-earmark-text me-2"></i> {{ exam.title }}
+            </h1>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if exam.exam_type == 'content' %}
             <!-- Regular content exam -->
-            <div class="exam-content">
-                {{ exam.content|safe }}
+            <div class="exam-content p-2 p-md-3">
+              {{ exam.content|safe }}
             </div>
-        {% elif exam.exam_type == 'likert' %}
+          {% elif exam.exam_type == 'likert' %}
             <!-- Likert scale survey -->
-            <div class="mb-4">
+            {% if exam.content %}
+              <div class="mb-4 p-2 p-md-3 border-bottom">
                 {{ exam.content|safe }}
-            </div>
+              </div>
+            {% endif %}
             
             {% set likert_scale = exam.get_likert_scale() %}
             
             {% if purchase.answers %}
-                <!-- Display submitted answers -->
-                <div class="alert alert-success">
-                    <h5>Your submitted responses:</h5>
-                    <ul class="list-group mt-3">
-                        {% for question in exam.get_questions() %}
-                            {% set question_id = question.id|string %}
-                            <li class="list-group-item">
-                                <div class="fw-bold">{{ question.text }}</div>
-                                <div>Your answer: 
-                                    {% if question_id in answers %}
-                                        {% set value = answers[question_id]|int %}
-                                        {{ likert_scale[value] if value in likert_scale else value }}
-                                    {% else %}
-                                        Not answered
-                                    {% endif %}
-                                </div>
-                            </li>
-                        {% endfor %}
-                    </ul>
+              <!-- Display submitted answers -->
+              <div class="alert alert-success bg-success bg-opacity-10 border-success">
+                <h5 class="fw-bold mb-3">
+                  <i class="bi bi-check-circle-fill me-2"></i> Your Submitted Responses
+                </h5>
+                <div class="list-group mt-3">
+                  {% for question in exam.get_questions() %}
+                    {% set question_id = question.id|string %}
+                    <div class="list-group-item list-group-item-action">
+                      <div class="fw-bold">{{ loop.index }}. {{ question.text }}</div>
+                      <div class="mt-2">
+                        <span class="fw-medium">Your answer:</span> 
+                        {% if question_id in answers %}
+                          {% set value = answers[question_id]|int %}
+                          <span class="badge bg-primary">{{ likert_scale[value] if value in likert_scale else value }}</span>
+                        {% else %}
+                          <span class="badge bg-secondary">Not answered</span>
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endfor %}
                 </div>
+              </div>
             {% else %}
-                <!-- Survey form -->
-                <form method="post">
-                    <div class="likert-questions">
-                        {% for question in exam.get_questions() %}
-                            <div class="card mb-3">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ question.text }}</h5>
-                                    <div class="d-flex flex-wrap gap-3 mt-3">
-                                        {% for value, label in likert_scale.items()|sort %}
-                                            <div class="form-check form-check-inline">
-                                                <input class="form-check-input" type="radio" name="{{ question.id }}" id="q{{ question.id }}_{{ value }}" value="{{ value }}" {% if loop.first %}required{% endif %}>
-                                                <label class="form-check-label" for="q{{ question.id }}_{{ value }}">{{ label }}</label>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
+              <!-- Survey form -->
+              <form method="post" class="needs-validation" novalidate>
+                <div class="likert-questions">
+                  {% for question in exam.get_questions() %}
+                    <div class="card mb-4 shadow-sm">
+                      <div class="card-body">
+                        <h5 class="card-title text-center">
+                          <i class="bi bi-question-circle me-2 text-primary"></i>
+                          {{ loop.index }}. {{ question.text }}
+                        </h5>
+                        <div class="d-flex flex-wrap justify-content-center gap-3 gap-md-4 mt-4">
+                          {% for value, label in likert_scale.items()|sort %}
+                            <div class="form-check form-check-inline">
+                              <input class="form-check-input" type="radio" 
+                                     name="{{ question.id }}" 
+                                     id="q{{ question.id }}_{{ value }}" 
+                                     value="{{ value }}"
+                                     style="width: 1.5em; height: 1.5em; cursor: pointer;"
+                                     {% if loop.first %}required{% endif %}>
+                              <label class="form-check-label ps-2 fs-5" for="q{{ question.id }}_{{ value }}" style="cursor: pointer;">
+                                {{ label }}
+                              </label>
+                              <div class="invalid-feedback">Please select an option.</div>
                             </div>
-                        {% endfor %}
+                          {% endfor %}
+                        </div>
+                      </div>
                     </div>
-                    
-                    <div class="text-center mt-4">
-                        <button type="submit" class="btn btn-primary">Submit Responses</button>
-                    </div>
-                </form>
+                  {% endfor %}
+                </div>
+                
+                <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 mt-4 pt-3 border-top">
+                  <button type="submit" class="btn btn-primary w-100 w-sm-auto">
+                    <i class="bi bi-send me-1"></i> Submit Responses
+                  </button>
+                </div>
+              </form>
+              
+              <script>
+              // Form validation
+              (function() {
+                'use strict';
+                window.addEventListener('load', function() {
+                  // Fetch all the forms we want to apply custom Bootstrap validation styles to
+                  var forms = document.getElementsByClassName('needs-validation');
+                  // Loop over them and prevent submission
+                  var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                      if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                      }
+                      form.classList.add('was-validated');
+                    }, false);
+                  });
+                }, false);
+              })();
+              </script>
             {% endif %}
-        {% endif %}
+          {% endif %}
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}

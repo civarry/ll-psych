@@ -1,34 +1,153 @@
 <!-- templates/admin/purchases.html -->
 {% extends 'base.html' %}
 
+{% block title %}Purchase History{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-  <h2 class="mb-4">Purchase History</h2>
-  <table class="table table-bordered table-hover table-striped">
-    <thead class="table-dark">
-      <tr>
-        <th>Purchase ID</th>
-        <th>User Email</th>
-        <th>Exam Title</th>
-        <th>Amount</th>
-        <th>Purchased At</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for purchase in purchases %}
-        <tr>
-          <td>{{ purchase.id }}</td>
-          <td>{{ purchase.email }}</td>
-          <td>{{ purchase.exam.title if purchase.exam else 'N/A' }}</td>
-          <td>₱{{ "%.2f"|format(purchase.exam.price) if purchase.exam else '0.00' }}</td>
-          <td>{{ purchase.purchased_at.strftime('%Y-%m-%d %I:%M %p') }}</td>
-        </tr>
-      {% else %}
-        <tr>
-          <td colspan="5" class="text-center">No purchases found.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="container py-3 py-md-4">
+  <div class="row justify-content-center">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-primary bg-gradient text-white">
+          <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center">
+            <h1 class="h4 mb-2 mb-sm-0 fw-bold">
+              <i class="bi bi-receipt-cutoff me-2"></i> Purchase History
+            </h1>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light btn-sm">
+              <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+            </a>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <!-- Purchase Summary -->
+          <div class="mb-3">
+            <div class="alert alert-info bg-light text-dark border">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle-fill me-2 text-primary"></i>
+                <div>
+                  <span class="fw-bold">{{ purchases|length }}</span> purchase{{ "s" if purchases|length != 1 else "" }} found
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Purchases Table -->
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+              <thead class="table-primary bg-gradient">
+                <tr>
+                  <th class="text-center">
+                    <i class="bi bi-hash me-1"></i>ID
+                  </th>
+                  <th>
+                    <i class="bi bi-envelope me-1"></i>User Email
+                  </th>
+                  <th>
+                    <i class="bi bi-file-earmark-text me-1"></i>Exam Title
+                  </th>
+                  <th>
+                    <i class="bi bi-currency-dollar me-1"></i>Amount
+                  </th>
+                  <th class="text-center">
+                    <i class="bi bi-clock-history me-1"></i>Status
+                  </th>
+                  <th class="text-center">
+                    <i class="bi bi-calendar3 me-1"></i>Purchased At
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for purchase in purchases %}
+                  <tr>
+                    <td class="text-center fw-bold">{{ purchase.id }}</td>
+                    <td>{{ purchase.email }}</td>
+                    <td>{{ purchase.exam.title if purchase.exam else 'N/A' }}</td>
+                    <td>₱{{ "%.2f"|format(purchase.exam.price) if purchase.exam else '0.00' }}</td>
+                    <td class="text-center">
+                      <span class="badge {{ 'bg-success' if purchase.payment_status == 'paid' else 'bg-warning' }}">
+                        <i class="bi bi-{{ 'check-circle' if purchase.payment_status == 'paid' else 'hourglass-split' }} me-1"></i>
+                        {{ purchase.payment_status | capitalize }}
+                      </span>
+                    </td>
+                    <td class="text-center small">
+                      <span class="d-block">{{ purchase.purchased_at.strftime('%Y-%m-%d') }}</span>
+                      <small class="text-muted">{{ purchase.purchased_at.strftime('%I:%M %p') }}</small>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="6" class="text-center py-5">
+                      <i class="bi bi-cart-x fs-1 d-block mb-2 text-muted"></i>
+                      <p class="mb-0">No purchases found.</p>
+                      <p class="small text-muted">Purchase records will appear here once available.</p>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Summary Statistics (if needed) -->
+          {% if purchases|length > 0 %}
+          <div class="row g-3 mt-2">
+            <div class="col-md-4">
+              <div class="card bg-light border">
+                <div class="card-body p-3">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill text-success fs-4 me-2"></i>
+                    <div>
+                      <h6 class="mb-0">Completed Purchases</h6>
+                      <span class="fw-bold">{{ purchases|selectattr('payment_status', 'equalto', 'paid')|list|length }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card bg-light border">
+                <div class="card-body p-3">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-hourglass-split text-warning fs-4 me-2"></i>
+                    <div>
+                      <h6 class="mb-0">Pending Purchases</h6>
+                      <span class="fw-bold">{{ purchases|selectattr('payment_status', 'equalto', 'pending')|list|length }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card bg-light border">
+                <div class="card-body p-3">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-currency-dollar text-primary fs-4 me-2"></i>
+                    <div>
+                      <h6 class="mb-0">Total Revenue</h6>
+                      <span class="fw-bold">₱{{ "%.2f"|format(purchases|selectattr('payment_status', 'equalto', 'paid')|sum(attribute='exam.price')) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          <!-- Action footer -->
+          <div class="d-flex flex-column flex-sm-row justify-content-between gap-2 mt-4 border-top pt-3">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary w-100 w-sm-auto">
+              <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+            </a>
+            <!-- You can add additional action buttons here if needed -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- Add your scripts here if needed -->
 {% endblock %}
