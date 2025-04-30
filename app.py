@@ -16,6 +16,7 @@ from reportlab.pdfgen import canvas
 import tempfile
 from datetime import datetime
 import tempfile
+from flask_migrate import Migrate
 
 # Load environment variables
 load_dotenv()
@@ -52,6 +53,7 @@ ADMIN_PASSWORD_HASH = os.getenv('ADMIN_PASSWORD_HASH',
                               generate_password_hash('admin123'))  # Default password for dev only
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 # Database Models
 class Exam(db.Model):
@@ -637,8 +639,6 @@ The Exam Portal Team"""
 # Create database tables
 def init_db():
     with app.app_context():
-        db.create_all()
-        
         # Add sample exams if database is empty
         if not Exam.query.first():
             sample_exams = [
@@ -680,7 +680,12 @@ def init_db():
                 )
             ]
 
-            
+            for exam in sample_exams:
+                db.session.add(exam)
+                
+            db.session.commit()
+            print("Added sample exams to the database")
+        
         if not BlogPost.query.first():
             sample_post = BlogPost(
                 title="Welcome to Our Blog",
@@ -689,12 +694,6 @@ def init_db():
             db.session.add(sample_post)
             db.session.commit()
             print("Added sample blog post to the database")
-
-            for exam in sample_exams:
-                db.session.add(exam)
-                
-            db.session.commit()
-            print("Added sample exams to the database")
             
 def generate_result_pdf(purchase, total_score, zone_label):
     """Generates a professional PDF summary of the exam results and returns the file path."""
