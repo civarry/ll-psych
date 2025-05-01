@@ -735,6 +735,8 @@ def generate_result_pdf(purchase, total_score, zone_label):
     c.save()
     return temp_file.name
 
+
+init_db()
 if __name__ == '__main__':
     # Check email configuration
     if not EMAIL_ENABLED:
