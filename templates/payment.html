@@ -59,7 +59,7 @@
                 alert('Payment failed: ' + response.error.message);
             } else {
                 // Payment successful, redirect to success page
-                window.location.href = "{{ url_for('payment_success', purchase_id=purchase_id) }}";
+                window.location.href = "{{ url_for('payment.payment_success', purchase_id=purchase_id) }}";
             }
         });
         

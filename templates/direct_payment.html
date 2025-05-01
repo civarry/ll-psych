@@ -12,7 +12,7 @@
             <h1 class="h4 mb-2 mb-sm-0 fw-bold">
               <i class="bi bi-credit-card-2-front me-2"></i> Complete Your Payment
             </h1>
-            <a href="{{ url_for('buy', exam_id=exam.id) }}" class="btn btn-light btn-sm">
+            <a href="{{ url_for('payment.buy', exam_id=exam.id) }}" class="btn btn-light btn-sm">
               <i class="bi bi-arrow-left me-1"></i> Back to Checkout
             </a>
           </div>
@@ -57,7 +57,7 @@
                 <i class="bi bi-wallet2 me-1"></i> Enter your payment details
               </h6>
 
-              <form action="{{ url_for('process_payment', purchase_id=purchase_id) }}" method="post" id="payment-form" class="needs-validation" novalidate>
+              <form action="{{ url_for('payment.process_payment', purchase_id=purchase_id) }}" method="post" id="payment-form" class="needs-validation" novalidate>
                 <div class="mb-3">
                   <label for="card_number" class="form-label fw-bold">
                     <i class="bi bi-credit-card me-1"></i> Card Number
@@ -100,7 +100,7 @@
                 </div>
 
                 <div class="d-flex flex-column flex-sm-row justify-content-end gap-2 mt-4 border-top pt-3">
-                  <a href="{{ url_for('buy', exam_id=exam.id) }}" class="btn btn-outline-secondary w-100 w-sm-auto mb-2 mb-sm-0">
+                  <a href="{{ url_for('payment.buy', exam_id=exam.id) }}" class="btn btn-outline-secondary w-100 w-sm-auto mb-2 mb-sm-0">
                     <i class="bi bi-x-circle me-1"></i> Cancel
                   </a>
                   <button type="submit" class="btn btn-primary w-100 w-sm-auto">

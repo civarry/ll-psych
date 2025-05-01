@@ -74,7 +74,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
                 <i class="bi bi-activity me-2"></i>LLPsychServices
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -83,17 +83,17 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">
+                        <a class="nav-link" href="{{ url_for('main.index') }}">
                             <i class="bi bi-house-door me-1"></i>Home
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('shop') }}">
+                        <a class="nav-link" href="{{ url_for('main.shop') }}">
                             <i class="bi bi-cart me-1"></i>Shop
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('about') }}">
+                        <a class="nav-link" href="{{ url_for('main.about') }}">
                             <i class="bi bi-info-circle me-1"></i>About
                         </a>
                     </li>
@@ -126,7 +126,7 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-4 text-md-start mb-2 mb-md-0">
-                    <a href="{{ url_for('index') }}" class="text-decoration-none text-primary fw-bold">
+                    <a href="{{ url_for('main.index') }}" class="text-decoration-none text-primary fw-bold">
                         <i class="bi bi-activity me-1"></i>LLPsychServices
                     </a>
                 </div>
