@@ -10,6 +10,11 @@ document.addEventListener('DOMContentLoaded', function () {
   const scoringRulesInput = document.getElementById('scoring_rules');
   const form = document.getElementById('exam-form');
   const questionsJsonInput = document.getElementById('likert_questions_json');
+  
+  // Required fields for validation - handle both create and edit form field IDs
+  const titleField = document.getElementById('title') || document.getElementById('exam-title');
+  const priceField = document.getElementById('price') || document.getElementById('exam-price');
+  const descriptionField = document.getElementById('description') || document.getElementById('exam-description');
 
   function createLikertValueRow(value = '', label = '') {
     const row = document.createElement('div');
@@ -108,7 +113,34 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   if (form) {
-    form.addEventListener('submit', function () {
+    form.addEventListener('submit', function (event) {
+      // Form validation for required fields
+      const title = titleField?.value.trim() || '';
+      const price = priceField?.value.trim() || '';
+      const description = descriptionField?.value.trim() || '';
+      
+      // Check if required fields are empty
+      if (!title || !price || !description) {
+        // Prevent the form from submitting
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Add was-validated class for Bootstrap validation styles
+        form.classList.add('was-validated');
+        
+        // Focus on the first empty required field
+        if (!title && titleField) {
+          titleField.focus();
+        } else if (!price && priceField) {
+          priceField.focus();
+        } else if (!description && descriptionField) {
+          descriptionField.focus();
+        }
+        
+        return;
+      }
+      
+      // Continue with form processing if validation passes
       if (questionsJsonInput) {
         const allQuestions = [];
         document.querySelectorAll('.likert-question').forEach((el, index) => {
@@ -173,6 +205,17 @@ document.addEventListener('DOMContentLoaded', function () {
   if (examTypeSelect) {
     examTypeSelect.addEventListener('change', toggleSections);
     toggleSections();
+  }
+
+  // Add input event listeners to remove error styling when user starts typing
+  if (titleField || priceField || descriptionField) {
+    [titleField, priceField, descriptionField].filter(Boolean).forEach(field => {
+      field.addEventListener('input', function() {
+        if (field.value.trim()) {
+          field.classList.remove('is-invalid');
+        }
+      });
+    });
   }
 
   preloadQuestions();
