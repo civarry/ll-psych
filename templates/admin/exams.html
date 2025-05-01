@@ -73,51 +73,6 @@
                         <i class="bi bi-trash me-1"></i> Delete
                       </button>
                     </div>
-                    
-                    <!-- Delete Modal -->
-                    <div class="modal fade" id="deleteModal{{ exam.id }}" tabindex="-1">
-                      <div class="modal-dialog">
-                        <div class="modal-content">
-                          <div class="modal-header bg-danger text-white">
-                            <h5 class="modal-title">
-                              <i class="bi bi-exclamation-triangle me-2"></i> Confirm Delete
-                            </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                          </div>
-                          <div class="modal-body text-start">
-                            <p>Are you sure you want to delete <strong>{{ exam.title }}</strong>?</p>
-                            {% if exam.purchases|length > 0 %}
-                              <div class="alert alert-warning">
-                                <i class="bi bi-exclamation-circle me-2"></i>
-                                This exam has {{ exam.purchases|length }} purchases. 
-                                Deletion is not allowed.
-                              </div>
-                            {% else %}
-                              <p class="text-danger">
-                                <i class="bi bi-exclamation-circle me-2"></i>
-                                This action cannot be undone.
-                              </p>
-                            {% endif %}
-                          </div>
-                          <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                              <i class="bi bi-x-circle me-1"></i> Cancel
-                            </button>
-                            {% if exam.purchases|length == 0 %}
-                              <form action="{{ url_for('admin_delete_exam', exam_id=exam.id) }}" method="post">
-                                <button type="submit" class="btn btn-danger">
-                                  <i class="bi bi-trash me-1"></i> Delete
-                                </button>
-                              </form>
-                            {% else %}
-                              <button type="button" class="btn btn-danger" disabled>
-                                <i class="bi bi-trash me-1"></i> Delete
-                              </button>
-                            {% endif %}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   </td>
                 </tr>
                 {% else %}
@@ -147,4 +102,51 @@
     </div>
   </div>
 </div>
+
+<!-- Delete Modals -->
+{% for exam in exams %}
+<div class="modal fade" id="deleteModal{{ exam.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ exam.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteModalLabel{{ exam.id }}">
+          <i class="bi bi-exclamation-triangle me-2"></i> Confirm Delete
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-start">
+        <p>Are you sure you want to delete <strong>{{ exam.title }}</strong>?</p>
+        {% if exam.purchases|length > 0 %}
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            This exam has {{ exam.purchases|length }} purchases. 
+            Deletion is not allowed.
+          </div>
+        {% else %}
+          <p class="text-danger">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            This action cannot be undone.
+          </p>
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle me-1"></i> Cancel
+        </button>
+        {% if exam.purchases|length == 0 %}
+          <form action="{{ url_for('admin_delete_exam', exam_id=exam.id) }}" method="post" class="d-inline">
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash me-1"></i> Delete
+            </button>
+          </form>
+        {% else %}
+          <button type="button" class="btn btn-danger" disabled>
+            <i class="bi bi-trash me-1"></i> Delete
+          </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
 {% endblock %}

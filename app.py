@@ -292,8 +292,7 @@ def admin_create_exam():
             content=content,
             exam_type=exam_type,
             questions=json.dumps(questions) if questions else None,
-            scoring_rules=json.dumps(scoring_rules) if scoring_rules else None,
-            likert_scale=None  # Deprecated: now unused
+            scoring_rules=json.dumps(scoring_rules) if scoring_rules else None
         )
 
         db.session.add(new_exam)
@@ -641,30 +640,6 @@ def init_db():
                         {"id": 1, "text": "I stay calm under pressure."},
                         {"id": 2, "text": "I recover quickly from setbacks."},
                         {"id": 3, "text": "I find it easy to manage my emotions in challenging situations."}
-                    ])
-                ),
-                Exam(
-                    title="Cognitive Flexibility Inventory",
-                    description="Assess your ability to shift perspectives and adapt to changing environments and situations.",
-                    price=549.00,
-                    content="This exam explores how you respond to new information, unexpected changes, and mental challenges.",
-                    exam_type="likert",
-                    questions=json.dumps([
-                        {"id": 1, "text": "I can easily consider multiple options before making a decision."},
-                        {"id": 2, "text": "I can view situations from different perspectives."},
-                        {"id": 3, "text": "When faced with a new problem, I try to think about it in new ways."}
-                    ])
-                ),
-                Exam(
-                    title="Well-Being Self-Check",
-                    description="Gain insights into your current emotional, social, and psychological well-being.",
-                    price=399.00,
-                    content="A reflective self-assessment to explore how you are doing across different areas of well-being.",
-                    exam_type="likert",
-                    questions=json.dumps([
-                        {"id": 1, "text": "I feel a sense of purpose in my daily activities."},
-                        {"id": 2, "text": "I have positive relationships with others."},
-                        {"id": 3, "text": "I generally feel satisfied with my life."}
                     ])
                 )
             ]
