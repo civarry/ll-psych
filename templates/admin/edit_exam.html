@@ -18,96 +18,75 @@
         </div>
         <div class="card-body">
           <form method="POST" class="needs-validation" novalidate id="exam-form">
-            <!-- Title Field -->
+            <!-- Title -->
             <div class="mb-3">
               <label for="exam-title" class="form-label fw-bold">
                 <i class="bi bi-type-h1 me-1"></i> Title
               </label>
-              <input type="text" class="form-control" id="exam-title" name="title" 
-                     value="{{ exam.title }}" required>
+              <input type="text" class="form-control" id="exam-title" name="title" value="{{ exam.title }}" required>
               <div class="invalid-feedback">Please provide a title.</div>
             </div>
-            
-            <!-- Description Field -->
+
+            <!-- Description -->
             <div class="mb-3">
               <label for="exam-description" class="form-label fw-bold">
                 <i class="bi bi-file-text me-1"></i> Description
               </label>
-              <textarea class="form-control" id="exam-description" name="description" 
-                        rows="3" required>{{ exam.description }}</textarea>
+              <textarea class="form-control" id="exam-description" name="description" rows="3" required>{{ exam.description }}</textarea>
               <div class="invalid-feedback">Please provide a description.</div>
             </div>
-            
-            <!-- Price Field -->
+
+            <!-- Price -->
             <div class="mb-3">
               <label for="exam-price" class="form-label fw-bold">
                 <i class="bi bi-currency-dollar me-1"></i> Price (₱)
               </label>
               <div class="input-group">
                 <span class="input-group-text">₱</span>
-                <input type="number" step="0.01" class="form-control" id="exam-price" 
-                       name="price" value="{{ exam.price }}" required>
+                <input type="number" step="0.01" class="form-control" id="exam-price" name="price" value="{{ exam.price }}" required>
                 <div class="invalid-feedback">Please provide a valid price.</div>
               </div>
             </div>
-            
-            <!-- Exam Type Field -->
+
+            <!-- Type -->
             <div class="mb-3">
               <label for="exam-type" class="form-label fw-bold">
                 <i class="bi bi-list-check me-1"></i> Exam Type
               </label>
               <select class="form-select" id="exam-type" name="exam_type" required>
-                <option value="content" {% if exam.exam_type == 'content' %}selected{% endif %}>
-                  Content
-                </option>
-                <option value="likert" {% if exam.exam_type == 'likert' %}selected{% endif %}>
-                  Likert Scale
-                </option>
+                <option value="content" {% if exam.exam_type == 'content' %}selected{% endif %}>Content</option>
+                <option value="likert" {% if exam.exam_type == 'likert' %}selected{% endif %}>Likert Scale</option>
               </select>
               <div class="invalid-feedback">Please select an exam type.</div>
             </div>
-            
-            <!-- Content Field -->
+
+            <!-- Content -->
             <div class="mb-3" id="content-section" {% if exam.exam_type == 'likert' %}style="display: none;"{% endif %}>
               <label for="exam-content" class="form-label fw-bold">
                 <i class="bi bi-file-earmark-richtext me-1"></i> Content (HTML allowed)
               </label>
-              <textarea class="form-control" id="exam-content" name="content" 
-                        rows="5">{{ exam.content }}</textarea>
-              <small class="text-muted">HTML formatting is supported for rich content.</small>
+              <textarea class="form-control" id="exam-content" name="content" rows="5">{{ exam.content }}</textarea>
+              <small class="text-muted">HTML formatting is supported.</small>
             </div>
 
-            <!-- Likert Questions Section -->
-            <div id="likert-section" class="mb-3 border rounded p-2 p-sm-3 bg-light" 
-                 {% if exam.exam_type != 'likert' %}style="display: none;"{% endif %}>
+            <!-- Likert Questions -->
+            <div id="likert-section" class="mb-3 border rounded p-2 p-sm-3 bg-light" {% if exam.exam_type != 'likert' %}style="display: none;"{% endif %}>
               <div class="mb-3">
                 <label class="form-label fw-bold">
                   <i class="bi bi-ui-radios me-1"></i> Likert Questions
                 </label>
-                <p class="text-muted small">Add questions for the Likert scale survey</p>
-                
+                <p class="text-muted small">Each question can have its own custom Likert scale</p>
                 <div id="likert-questions" class="mb-2">
-                  <!-- Questions will be added here by JavaScript -->
+                  <!-- Filled via JS -->
                 </div>
-
                 <button type="button" class="btn btn-outline-primary btn-sm w-100 w-sm-auto mt-2" id="add-question">
                   <i class="bi bi-plus-circle me-1"></i> Add Question
                 </button>
               </div>
-
-              <div id="likert-scale-section" class="mb-3 border-top pt-3 mt-3">
-                <h5 class="fw-bold fs-6">Likert Scale Labels</h5>
-                <p class="text-muted small">Define labels for Likert values (e.g., 0: Never, 1: Monthly)</p>
-                <div id="likert-values-container">
-                  <!-- Scale values will be added here by JavaScript -->
-                </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm w-100 w-sm-auto mt-2" id="add-likert-value">
-                  <i class="bi bi-plus-circle me-1"></i> Add Likert Value
-                </button>
-              </div>
+              <input type="hidden" name="likert_questions_json" id="likert_questions_json">
             </div>
 
-            <!-- Dynamic Scoring Rules Section -->
+            <!-- Scoring Rules -->
             <div class="mb-3" id="scoring-rules-section" {% if exam.exam_type != 'likert' %}style="display: none;"{% endif %}>
               <label class="form-label fw-bold">
                 <i class="bi bi-graph-up me-1"></i> Scoring Rules
@@ -117,11 +96,11 @@
               <button type="button" class="btn btn-outline-secondary btn-sm w-100 w-sm-auto mt-2" id="add-scoring-zone">
                 <i class="bi bi-plus-circle me-1"></i> Add Scoring Zone
               </button>
-              <textarea name="scoring_rules" id="scoring_rules" class="d-none">{{ exam.scoring_rules|tojson }}</textarea>
+              <textarea name="scoring_rules" id="scoring_rules" class="d-none">{{ exam.scoring_rules | tojson | safe }}</textarea>
               <div class="form-text mt-2 small">Zones will be serialized into JSON on save.</div>
             </div>
 
-            <!-- Form Actions -->
+            <!-- Actions -->
             <div class="d-flex flex-column flex-sm-row justify-content-end gap-2 mt-4 border-top pt-3">
               <a href="{{ url_for('admin_exams') }}" class="btn btn-outline-secondary w-100 w-sm-auto mb-2 mb-sm-0">
                 <i class="bi bi-x-circle me-1"></i> Cancel
@@ -138,13 +117,19 @@
 </div>
 
 <script>
-// Pass exam data to the common JavaScript 
-const examQuestions = {{ exam.questions|tojson|safe }};
-const examLikertScale = {{ exam.likert_scale|tojson|safe }};
-const scoringRules = {{ exam.scoring_rules|tojson|safe }};
+  const examQuestions = {{ exam.questions | tojson | safe }};
+  const scoringRules = {{ exam.scoring_rules | tojson | safe }};
 </script>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/exam-form.js') }}"></script>
+<script>
+  document.getElementById('exam-type').addEventListener('change', function () {
+    const isLikert = this.value === 'likert';
+    document.getElementById('likert-section').style.display = isLikert ? '' : 'none';
+    document.getElementById('scoring-rules-section').style.display = isLikert ? '' : 'none';
+    document.getElementById('content-section').style.display = isLikert ? 'none' : '';
+  });
+</script>
 {% endblock %}

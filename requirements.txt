@@ -6,3 +6,4 @@ email-validator==2.0.0
 reportlab
 gunicorn
 flask_migrate
+psycopg2-binary

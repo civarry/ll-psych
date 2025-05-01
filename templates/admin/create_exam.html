@@ -1,4 +1,3 @@
-<!-- templates/admin/create_exam.html -->
 {% extends 'base.html' %}
 
 {% block title %}Create Exam{% endblock %}
@@ -20,6 +19,7 @@
         </div>
         <div class="card-body">
           <form method="post" id="exam-form" class="needs-validation" novalidate>
+            <!-- Title and Price -->
             <div class="row mb-3">
               <div class="col-md-8 mb-3 mb-md-0">
                 <label for="title" class="form-label fw-bold">
@@ -39,7 +39,8 @@
                 </div>
               </div>
             </div>
-            
+
+            <!-- Description -->
             <div class="mb-3">
               <label for="description" class="form-label fw-bold">
                 <i class="bi bi-file-text me-1"></i> Description
@@ -47,7 +48,8 @@
               <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
               <div class="invalid-feedback">Please provide a description.</div>
             </div>
-            
+
+            <!-- Exam Type -->
             <div class="mb-3">
               <label for="exam-type" class="form-label fw-bold">
                 <i class="bi bi-list-check me-1"></i> Exam Type
@@ -58,8 +60,8 @@
               </select>
               <div class="invalid-feedback">Please select an exam type.</div>
             </div>
-            
-            <!-- Content Field -->
+
+            <!-- Content Section -->
             <div class="mb-3" id="content-section">
               <label for="content" class="form-label fw-bold">
                 <i class="bi bi-file-earmark-richtext me-1"></i> Exam Content (HTML allowed)
@@ -67,67 +69,34 @@
               <textarea class="form-control" id="content" name="content" rows="5"></textarea>
               <small class="text-muted">HTML formatting is supported for rich content.</small>
             </div>
-            
+
             <!-- Likert Questions Section -->
             <div id="likert-section" class="mb-3 border rounded p-2 p-sm-3 bg-light d-none">
-              <div class="mb-3">
-                <label class="form-label fw-bold">
-                  <i class="bi bi-ui-radios me-1"></i> Likert Questions
-                </label>
-                <p class="text-muted small">Add questions for the Likert scale survey</p>
-                
-                <div id="likert-questions" class="mb-2">
-                  <!-- Questions will be added here by JavaScript -->
-                  <div class="input-group mb-2">
-                    <span class="input-group-text"><i class="bi bi-question-circle"></i></span>
-                    <input type="text" name="question_text" class="form-control" placeholder="Enter question text" required>
-                    <button type="button" class="btn btn-outline-danger remove-question"><i class="bi bi-trash"></i></button>
-                  </div>
-                </div>
+              <label class="form-label fw-bold">
+                <i class="bi bi-ui-radios me-1"></i> Likert Questions
+              </label>
+              <p class="text-muted small">Add questions for the Likert scale survey. Each question can define its own scale.</p>
 
-                <button type="button" class="btn btn-outline-primary btn-sm w-100 w-sm-auto mt-2" id="add-question">
-                  <i class="bi bi-plus-circle me-1"></i> Add Question
-                </button>
+              <div id="likert-questions" class="mb-3">
+                <!-- Likert question blocks will be dynamically added here -->
               </div>
 
-              <div id="likert-scale-section" class="mb-3 border-top pt-3 mt-3">
-                <h5 class="fw-bold fs-6">Likert Scale Labels</h5>
-                <p class="text-muted small">Define labels for Likert values (e.g., 0: Never, 1: Monthly)</p>
-                <div id="likert-values-container">
-                  <!-- Scale values will be added here by JavaScript -->
-                  <div class="input-group mb-2">
-                    <span class="input-group-text">Value</span>
-                    <input type="number" class="form-control" name="likert_value" placeholder="Value (e.g., 0)" required>
-                    <span class="input-group-text">Label</span>
-                    <input type="text" class="form-control" name="likert_label" placeholder="Label (e.g., Never)" required>
-                    <button type="button" class="btn btn-outline-danger remove-likert-value">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </div>
-                </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm w-100 w-sm-auto mt-2" id="add-likert-value">
-                  <i class="bi bi-plus-circle me-1"></i> Add Likert Value
-                </button>
-              </div>
+              <button type="button" class="btn btn-outline-primary btn-sm w-100 w-sm-auto mb-3" id="add-question">
+                <i class="bi bi-plus-circle me-1"></i> Add Question
+              </button>
+
+              <!-- Hidden field to collect all questions and their individual scales -->
+              <input type="hidden" id="likert_questions_json" name="likert_questions_json">
             </div>
 
-            <!-- Dynamic Scoring Rules Section -->
+            <!-- Scoring Rules -->
             <div class="mb-3 d-none" id="scoring-rules-section">
               <label class="form-label fw-bold">
                 <i class="bi bi-graph-up me-1"></i> Scoring Rules
               </label>
               <p class="text-muted small">Define score zones (e.g., 0–7: Education)</p>
               <div id="scoring-rules-container" class="mb-2">
-                <!-- Scoring rules will be added here -->
-                <div class="input-group mb-2">
-                  <span class="input-group-text">Min</span>
-                  <input type="number" class="form-control" placeholder="Min Score" required>
-                  <span class="input-group-text">Max</span>
-                  <input type="number" class="form-control" placeholder="Max Score" required>
-                  <span class="input-group-text">Label</span>
-                  <input type="text" class="form-control" placeholder="Label (e.g., Zone I: Education)" required>
-                  <button type="button" class="btn btn-outline-danger remove-scoring-zone"><i class="bi bi-trash"></i></button>
-                </div>
+                <!-- Rules dynamically added -->
               </div>
               <button type="button" class="btn btn-outline-secondary btn-sm w-100 w-sm-auto mt-2" id="add-scoring-zone">
                 <i class="bi bi-plus-circle me-1"></i> Add Scoring Zone
@@ -155,4 +124,12 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/exam-form.js') }}"></script>
+<script>
+  document.getElementById('exam-type').addEventListener('change', function () {
+    const isLikert = this.value === 'likert';
+    document.getElementById('likert-section').classList.toggle('d-none', !isLikert);
+    document.getElementById('scoring-rules-section').classList.toggle('d-none', !isLikert);
+    document.getElementById('content-section').classList.toggle('d-none', isLikert);
+  });
+</script>
 {% endblock %}

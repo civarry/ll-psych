@@ -66,32 +66,20 @@ class Exam(db.Model):
     questions = db.Column(db.Text, nullable=True)  # Stored as JSON
     exam_type = db.Column(db.String(20), default='content')  # 'content' or 'likert'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    likert_scale = db.Column(db.Text, nullable=True)
     scoring_rules = db.Column(db.Text, nullable=True)
     
     def get_questions(self):
-        """Parse the JSON questions"""
+        """Parse the JSON questions with scale support"""
         if not self.questions:
             return []
         try:
-            return json.loads(self.questions)
-        except:
-            return []
-    
-    def get_likert_scale(self):
-        """Returns the Likert scale as a dict, or defaults if not set"""
-        default_scale = {
-            "1": "Strongly Disagree",
-            "2": "Disagree",
-            "3": "Neutral",
-            "4": "Agree",
-            "5": "Strongly Agree"
-        }
-        try:
-            return json.loads(self.likert_scale) if self.likert_scale else default_scale
+            questions = json.loads(self.questions)
+            for q in questions:
+                if 'scale' not in q:
+                    q['scale'] = []  # fallback to empty if missing
+            return questions
         except Exception:
-            return default_scale
-
+            return []
 class Purchase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     exam_id = db.Column(db.Integer, db.ForeignKey('exam.id'), nullable=False)
@@ -275,14 +263,14 @@ def admin_create_exam():
 
         # 🔹 Build questions list for likert type
         questions = []
+        questions = []
         if exam_type == 'likert':
-            question_texts = request.form.getlist('question_text')
-            for i, question_text in enumerate(question_texts):
-                if question_text:
-                    questions.append({
-                        "id": i + 1,
-                        "text": question_text
-                    })
+            try:
+                questions_json = request.form.get('likert_questions_json')
+                questions = json.loads(questions_json) if questions_json else []
+            except Exception as e:
+                flash('Failed to parse Likert questions.', 'danger')
+                return redirect(url_for('admin_create_exam'))
 
         # 🔹 Create the new Exam object with scoring_rules
         likert_scale = None
@@ -299,7 +287,7 @@ def admin_create_exam():
             exam_type=exam_type,
             questions=json.dumps(questions) if questions else None,
             scoring_rules=json.dumps(scoring_rules) if scoring_rules else None,
-            likert_scale=likert_scale
+            likert_scale=None  # Deprecated: now unused
         )
 
         db.session.add(new_exam)
@@ -325,21 +313,20 @@ def admin_edit_exam(exam_id):
 
         if exam.exam_type == 'likert':
             # Process Likert scale questions
-            question_texts = request.form.getlist('question_text')
-            questions = [{"id": i + 1, "text": text} for i, text in enumerate(question_texts) if text]
-            exam.questions = json.dumps(questions) if questions else None
+            try:
+                questions_json = request.form.get('likert_questions_json')
+                questions = json.loads(questions_json) if questions_json else []
+                exam.questions = json.dumps(questions)
+            except Exception:
+                flash("Failed to parse Likert questions JSON.", "danger")
+                return redirect(request.url)
 
-            # Process Likert scale values and labels
-            likert_values = request.form.getlist("likert_value")
-            likert_labels = request.form.getlist("likert_label")
-            exam.likert_scale = json.dumps({v: l for v, l in zip(likert_values, likert_labels)})
-
-            # Process scoring rules as JSON
+            # Process scoring rules
             scoring_rules_raw = request.form.get("scoring_rules", "").strip()
             if scoring_rules_raw:
                 try:
-                    parsed = json.loads(scoring_rules_raw)  # Validate JSON
-                    exam.scoring_rules = json.dumps(parsed)  # Store as JSON string
+                    parsed = json.loads(scoring_rules_raw)
+                    exam.scoring_rules = json.dumps(parsed)
                 except json.JSONDecodeError:
                     flash("Invalid JSON format in scoring rules.", "danger")
                     return redirect(request.url)
@@ -348,7 +335,6 @@ def admin_edit_exam(exam_id):
         else:
             # Clear Likert-specific fields if not a Likert exam
             exam.questions = None
-            exam.likert_scale = None
             exam.scoring_rules = None
 
         db.session.commit()
@@ -357,7 +343,6 @@ def admin_edit_exam(exam_id):
 
     # For GET request, populate form with existing data
     if exam.exam_type == 'likert':
-        # Convert JSON fields to Python objects for template use
         try:
             exam.scoring_rules = json.loads(exam.scoring_rules) if exam.scoring_rules else {}
         except json.JSONDecodeError:
@@ -367,11 +352,6 @@ def admin_edit_exam(exam_id):
             exam.questions = json.loads(exam.questions) if exam.questions else []
         except json.JSONDecodeError:
             exam.questions = []
-
-        try:
-            exam.likert_scale = json.loads(exam.likert_scale) if exam.likert_scale else {}
-        except json.JSONDecodeError:
-            exam.likert_scale = {}
 
     return render_template('admin/edit_exam.html', exam=exam)
 

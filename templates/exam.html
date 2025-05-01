@@ -1,4 +1,3 @@
-<!-- templates/exam.html -->
 {% extends 'base.html' %}
 
 {% block title %}{{ exam.title }}{% endblock %}
@@ -21,6 +20,7 @@
             <div class="exam-content p-2 p-md-3">
               {{ exam.content|safe }}
             </div>
+
           {% elif exam.exam_type == 'likert' %}
             <!-- Likert scale survey -->
             {% if exam.content %}
@@ -28,9 +28,7 @@
                 {{ exam.content|safe }}
               </div>
             {% endif %}
-            
-            {% set likert_scale = exam.get_likert_scale() %}
-            
+
             {% if purchase.answers %}
               <!-- Display submitted answers -->
               <div class="alert alert-success bg-success bg-opacity-10 border-success">
@@ -46,7 +44,8 @@
                         <span class="fw-medium">Your answer:</span> 
                         {% if question_id in answers %}
                           {% set value = answers[question_id]|int %}
-                          <span class="badge bg-primary">{{ likert_scale[value] if value in likert_scale else value }}</span>
+                          {% set label = (question.scale | selectattr("value", "equalto", value) | list | first).label %}
+                          <span class="badge bg-primary">{{ label }}</span>
                         {% else %}
                           <span class="badge bg-secondary">Not answered</span>
                         {% endif %}
@@ -67,16 +66,16 @@
                           {{ loop.index }}. {{ question.text }}
                         </h5>
                         <div class="d-flex flex-wrap justify-content-center gap-3 gap-md-4 mt-4">
-                          {% for value, label in likert_scale.items()|sort %}
+                          {% for option in question.scale|sort(attribute='value') %}
                             <div class="form-check form-check-inline">
                               <input class="form-check-input" type="radio" 
                                      name="{{ question.id }}" 
-                                     id="q{{ question.id }}_{{ value }}" 
-                                     value="{{ value }}"
+                                     id="q{{ question.id }}_{{ option.value }}" 
+                                     value="{{ option.value }}"
                                      style="width: 1.5em; height: 1.5em; cursor: pointer;"
                                      {% if loop.first %}required{% endif %}>
-                              <label class="form-check-label ps-2 fs-5" for="q{{ question.id }}_{{ value }}" style="cursor: pointer;">
-                                {{ label }}
+                              <label class="form-check-label ps-2 fs-5" for="q{{ question.id }}_{{ option.value }}" style="cursor: pointer;">
+                                {{ option.label }}
                               </label>
                               <div class="invalid-feedback">Please select an option.</div>
                             </div>
@@ -86,24 +85,22 @@
                     </div>
                   {% endfor %}
                 </div>
-                
+
                 <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 mt-4 pt-3 border-top">
                   <button type="submit" class="btn btn-primary w-100 w-sm-auto">
                     <i class="bi bi-send me-1"></i> Submit Responses
                   </button>
                 </div>
               </form>
-              
+
               <script>
-              // Form validation
-              (function() {
+              // Bootstrap form validation
+              (function () {
                 'use strict';
-                window.addEventListener('load', function() {
-                  // Fetch all the forms we want to apply custom Bootstrap validation styles to
+                window.addEventListener('load', function () {
                   var forms = document.getElementsByClassName('needs-validation');
-                  // Loop over them and prevent submission
-                  var validation = Array.prototype.filter.call(forms, function(form) {
-                    form.addEventListener('submit', function(event) {
+                  Array.prototype.forEach.call(forms, function (form) {
+                    form.addEventListener('submit', function (event) {
                       if (form.checkValidity() === false) {
                         event.preventDefault();
                         event.stopPropagation();
